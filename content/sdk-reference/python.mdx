@@ -1,0 +1,80 @@
+# Python SDK reference
+
+Package: [`agentmem-py`](https://pypi.org/project/agentmem-py/) (Apache-2.0).
+
+```bash
+pip install agentmem-py
+```
+
+Python ≥ 3.8. Depends only on `httpx`.
+
+## Synchronous client
+
+```python
+import os
+from agentmem_py import MemoryStore
+
+mem = MemoryStore(
+    api_key=os.environ["AGENTMEM_API_KEY"],
+    base_url=None,                  # None = use SDK default
+)
+```
+
+## Async client
+
+```python
+import asyncio
+from agentmem_py import AsyncMemoryStore
+
+async def main():
+    async with AsyncMemoryStore(api_key="sk-...") as mem:
+        await mem.write(content="hello", agent_id="agent-1", scope="team")
+        hits = await mem.search(query="hello", agent_id="agent-1")
+        for h in hits:
+            print(h.score, h.content)
+
+asyncio.run(main())
+```
+
+Both clients have the same method surface; the async one returns coroutines.
+
+## Memory
+
+```python
+result = mem.write(
+    content="Customer prefers email",
+    agent_id="support-bot",
+    scope="team",
+    role="executor",            # optional
+    workflow_id="wf-123",       # optional
+    expires_at=None,            # optional ISO-8601 string
+)
+# result.write_id, result.duplicate
+
+hits = mem.search(
+    query="customer preferences",
+    agent_id="support-bot",
+    top_k=5,
+    scope=None,
+    workflow_id=None,
+    at_time=None,
+    rerank=False,
+)
+# hits[i].score, .content, .agent_id, .scope, .role, .workflow_id,
+# .created_at, .vector_clock
+```
+
+## What's exported
+
+```python
+from agentmem_py import (
+    MemoryStore, AsyncMemoryStore,
+    MemoryHit, Conflict,
+)
+```
+
+The Python SDK in v0.2 covers `write`, `search`, and conflict-detection responses. Other admin endpoints (keys, teams, policies, webhooks, grants, retention, BYOK) — call them via raw HTTP with `httpx` for now, or use the [TypeScript SDK](/sdk-reference/typescript). Full parity is planned for v0.3.
+
+## Source
+
+[github.com/rooney011/agentmem-sdk](https://github.com/rooney011/agentmem-sdk) (Python source under `python/`).

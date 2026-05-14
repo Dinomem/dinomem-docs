@@ -1,0 +1,80 @@
+# Conflict policies
+
+When agent A writes "deadline is Friday" and agent B later writes "deadline is Monday", you have a contradiction. Without a policy, both memories sit in the database and your retrieval surfaces both — confusing the next agent that reads them.
+
+AgentMem runs a Gemini-based contradiction check before every write (when a policy is set) and applies the org's configured policy.
+
+## The four policies
+
+| Policy | Behavior |
+|---|---|
+| `ignore` | Skip the contradiction check. Both memories coexist. *Default for new orgs.* |
+| `planner_wins` | An `executor`-role write that conflicts with an existing memory is **blocked** (returns 409). Planner writes always go through. |
+| `timestamp_wins` | The new write proceeds; the conflicting old memories are **soft-deleted** and back-linked via `superseded_by`. |
+| `human_in_loop` | The new write is **blocked**; a `memory.conflict_detected` webhook fires with the details so a human can resolve manually. |
+
+## Setting a policy
+
+Policies are set per-org or per-workflow. Workflow-level takes precedence.
+
+```ts copy
+await mem.setPolicy({
+  policy:     'timestamp_wins',
+  workflowId: 'wf-123',           // optional — omit for org-wide default
+  webhookUrl: null,               // only used by human_in_loop
+})
+```
+
+## What `human_in_loop` looks like
+
+When this policy is set and a conflict is detected, the write is blocked **and** two notification paths fire:
+
+1. **Webhook event** `memory.conflict_detected` is dispatched to every active webhook subscription that listens for it ([see Webhooks](/features/webhooks)).
+2. **Direct POST** to the policy's `webhook_url` if one was configured on the policy row (back-compat path).
+
+The webhook payload looks like:
+
+```json
+{
+  "event": "memory.conflict_detected",
+  "orgId": "...",
+  "payload": {
+    "conflicts": [
+      {
+        "memoryId":    "uuid",
+        "content":     "deadline is Friday",
+        "agentId":     "planner-bot",
+        "severity":    "high",
+        "description": "directly contradicts new memory"
+      }
+    ]
+  },
+  "timestamp": "2026-05-14T10:00:00Z"
+}
+```
+
+The HTTP response on the original write call is:
+
+```json
+{
+  "error":        "Write blocked by conflict resolution policy",
+  "policy":       "human_in_loop",
+  "conflicts":    [...],
+  "webhookFired": true
+}
+```
+
+## Why a contradiction check at all
+
+The naive design — "every write succeeds, the newest one wins" — is what your app database does by default. It loses information and can't tell you when the system is in a confused state. Multi-agent workflows fail far more often when state silently diverges than when it loudly errors.
+
+The contradiction check uses `gemini-2.5-flash` with a structured-output schema; it returns `severity: 'high' | 'medium' | 'low'` per conflict. Only `high` severity triggers a policy action — medium and low are flagged for inspection but don't block.
+
+## Cost & latency
+
+Each check is one Flash call against ~10 candidate memories. Adds roughly 300–700ms to write latency. If you don't care about contradictions for a given workflow, set the policy to `ignore` and the check is skipped.
+
+## Related
+
+- [History](/features/history) — see what got superseded by what when `timestamp_wins` fires.
+- [Webhooks](/features/webhooks) — subscribe to `memory.conflict_blocked` / `memory.conflict_detected` / `memory.superseded`.

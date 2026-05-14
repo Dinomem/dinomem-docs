@@ -1,0 +1,156 @@
+# TypeScript SDK reference
+
+Package: [`@agentmem/sdk`](https://www.npmjs.com/package/@agentmem/sdk) (Apache-2.0).
+
+```bash
+npm install @agentmem/sdk
+```
+
+## Initialize
+
+```ts
+import { MemoryStore, AgentMemError, DEFAULT_BASE_URL } from '@agentmem/sdk'
+
+const mem = new MemoryStore({
+  apiKey:  process.env.AGENTMEM_API_KEY!,
+  baseUrl: DEFAULT_BASE_URL,        // optional — override for self-hosting
+})
+```
+
+Every method throws `AgentMemError` on non-2xx responses; the error has a `.status` field with the HTTP code.
+
+## Memory
+
+| Method | Signature |
+|---|---|
+| `write` | `(params: WriteParams) => Promise<WriteResult>` |
+| `search` | `(params: SearchParams) => Promise<MemoryHit[]>` |
+| `get` | `(id: string) => Promise<Memory>` |
+| `getHistory` | `(id: string) => Promise<MemoryHistory>` |
+| `delete` | `(id: string) => Promise<void>` |
+| `checkConflicts` | `(params: { content, agentId, workflowId?, scope? }) => Promise<ConflictResult>` |
+| `batchWrite` | `(writes: WriteParams[]) => Promise<BatchWriteResult>` |
+| `batchSearch` | `(searches: SearchParams[]) => Promise<BatchSearchResult>` |
+
+```ts
+const { writeId, duplicate } = await mem.write({
+  content:    'Customer prefers email',
+  agentId:    'support-bot',
+  scope:      'team',
+  role:       'executor',
+  workflowId: 'wf-123',
+  expiresAt:  new Date(Date.now() + 7*24*3600*1000).toISOString(),
+})
+
+const hits = await mem.search({
+  query:   'customer preferences',
+  agentId: 'support-bot',
+  topK:    5,
+  rerank:  true,
+})
+
+const history = await mem.getHistory(writeId)
+// { memory, supersededBy: Memory | null, supersedes: Memory[] }
+```
+
+## Scratchpad
+
+```ts
+await mem.scratchSet({ workflowId: 'wf-123', key: 'entities', value: '...', ttlSecs: 3600 })
+const v   = await mem.scratchGet('wf-123', 'entities')   // string | null
+await mem.scratchDel('wf-123', 'entities')
+```
+
+## Workflows
+
+```ts
+const summary  = await mem.summarize('wf-123', 'support-bot')   // string
+const memories = await mem.workflowMemories('wf-123')           // MemoryHit[]
+```
+
+## API keys
+
+```ts
+const keys = await mem.listKeys()                  // ApiKey[]
+const { key, id } = await mem.createKey({ name: 'prod' })   // shows full key once
+await mem.revokeKey(id)
+```
+
+## Teams
+
+```ts
+const teams = await mem.listTeams()
+const team  = await mem.createTeam('billing')
+await mem.deleteTeam(team.id)
+```
+
+## Conflict policies
+
+```ts
+const policies = await mem.listPolicies()
+await mem.setPolicy({ policy: 'timestamp_wins', workflowId: 'wf-123' })
+await mem.deletePolicy(policyId)
+```
+
+## Webhooks
+
+```ts
+const webhooks = await mem.listWebhooks()
+const { id, secret, ...rest } = await mem.createWebhook({
+  url:    'https://your.app/hook',
+  events: ['memory.written', 'memory.expired'],
+})
+
+await mem.enableWebhook(id)
+await mem.disableWebhook(id)
+await mem.deleteWebhook(id)
+```
+
+## Access grants
+
+```ts
+const grants = await mem.listGrants()
+const grant  = await mem.createGrant({
+  grantorRole:   'planner',
+  granteeAgent:  'support-bot',
+  resourceScope: 'private',
+})
+await mem.revokeGrant(grant.id)
+```
+
+## Org settings
+
+```ts
+await mem.registerByok(customerKeyBase64)
+await mem.removeByok()
+
+const retention = await mem.getRetention()
+await mem.setRetention({ memoriesDays: 90, auditDays: 365, scratchDays: 7 })
+
+const usage = await mem.getWorkflowUsage(30)
+// { 'wf-123': { writes, searches }, ... }
+```
+
+## Type exports
+
+Every public type is exported from the root:
+
+```ts
+import type {
+  ClientOptions,
+  WriteParams, WriteResult, SearchParams, MemoryHit, Memory, MemoryHistory,
+  ConflictResult, Conflict, ScratchSetParams,
+  ApiKey, CreateKeyParams, CreateKeyResult,
+  Team,
+  Policy, SetPolicyParams,
+  Webhook, CreateWebhookParams, WebhookEvent,
+  AccessGrant, CreateGrantParams,
+  Retention, WorkflowUsage,
+  BatchWriteResult, BatchSearchResult,
+  Scope, Role, ConflictPolicy,
+} from '@agentmem/sdk'
+```
+
+## Source
+
+[github.com/rooney011/agentmem-sdk](https://github.com/rooney011/agentmem-sdk) (TypeScript source under `typescript/`).

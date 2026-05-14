@@ -1,0 +1,76 @@
+# TTL & expiry
+
+Memories can expire automatically. Useful for session-scoped facts ("user is currently looking at order #1234"), temporary working notes, or any data you don't want indefinitely retained.
+
+## Set a TTL on write
+
+```ts copy
+import { addDays } from 'date-fns'
+
+await mem.write({
+  content:   'Active discount code: SUMMER25',
+  agentId:   'support-bot',
+  scope:     'team',
+  expiresAt: addDays(new Date(), 7).toISOString(),
+})
+```
+
+`expiresAt` is an ISO 8601 timestamp. Omit it for "never expires."
+
+## What "expired" means
+
+Two things happen when a memory's `expires_at` passes:
+
+1. **Immediately:** the memory disappears from search results. All three retrieval functions (semantic, keyword, graph) filter on `expires_at > now()`. No background job is needed for this — it's enforced at query time.
+2. **Within ~5 minutes (if pg_cron is configured):** a background sweep soft-deletes the row (`deleted_at = now()`) and fires the `memory.expired` webhook so subscribers can react.
+
+If pg_cron isn't running, the row stays in the table but remains hidden from search forever. Storage grows, but no behavior breaks.
+
+## The `memory.expired` webhook
+
+```json
+{
+  "event": "memory.expired",
+  "payload": {
+    "memoryId": "uuid",
+    "agentId":  "support-bot"
+  }
+}
+```
+
+One event fires per expired memory.
+
+## Operator setup: enable the sweep
+
+If you're self-hosting (or running your own Supabase project for AgentMem) and want the sweep, run this once in the SQL editor:
+
+```sql copy
+alter database postgres set app.api_base_url = 'https://<your-project>.supabase.co/functions/v1';
+alter database postgres set app.expire_token = '<random secret matching the EXPIRE_TOKEN env on the expire function>';
+
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select cron.schedule(
+  'agentmem-expire-memories',
+  '*/5 * * * *',
+  $cron$
+  select net.http_post(
+    url     := current_setting('app.api_base_url') || '/expire',
+    headers := jsonb_build_object(
+      'Authorization', 'Bearer ' || current_setting('app.expire_token'),
+      'Content-Type',  'application/json'
+    ),
+    body    := '{}'::jsonb
+  );
+  $cron$
+);
+```
+
+Set `EXPIRE_TOKEN` as a function secret with the same random value:
+
+```bash
+supabase secrets set EXPIRE_TOKEN=<that-random-string> --project-ref <your-ref>
+```
+
+The token is a shared secret between pg_cron and the `expire` Edge Function. Pick anything strong: `openssl rand -hex 32`.

@@ -1,0 +1,113 @@
+# Webhooks
+
+Subscribe to events fired by the API. Useful for keeping your own systems in sync (analytics, downstream caches, audit trails) without polling.
+
+## Event types
+
+| Event | When it fires |
+|---|---|
+| `memory.written` | A new memory was successfully stored |
+| `memory.deleted` | A memory was soft-deleted via `DELETE /v1/memory/:id` |
+| `memory.expired` | The TTL sweep soft-deleted a memory whose `expires_at` passed |
+| `memory.conflict_blocked` | A write was blocked by `planner_wins` or `human_in_loop` |
+| `memory.conflict_detected` | A high-severity conflict was detected by `human_in_loop` |
+| `memory.superseded` | One or more memories were soft-deleted by `timestamp_wins` |
+
+## Subscribe
+
+```ts copy
+const { secret, ...sub } = await mem.createWebhook({
+  url:    'https://your-backend.example.com/agentmem/hook',
+  events: ['memory.written', 'memory.expired', 'memory.conflict_detected'],
+})
+
+console.log('SAVE THIS:', secret)
+// The signing secret is shown ONCE. Store it; we don't return it again.
+```
+
+The subscription is active immediately. Disable or re-enable via:
+
+```ts copy
+await mem.disableWebhook(sub.id)
+await mem.enableWebhook(sub.id)
+await mem.deleteWebhook(sub.id)
+```
+
+## Payload shape
+
+Every event has the same envelope:
+
+```json
+{
+  "event":     "memory.written",
+  "orgId":     "uuid",
+  "payload":   { /* event-specific */ },
+  "timestamp": "2026-05-14T10:00:00Z"
+}
+```
+
+The `payload` differs per event. Examples:
+
+```json
+// memory.written
+{
+  "writeId":    "uuid",
+  "agentId":    "support-bot",
+  "scope":      "team",
+  "workflowId": "wf-123",
+  "encrypted":  false
+}
+
+// memory.expired
+{ "memoryId": "uuid", "agentId": "support-bot" }
+
+// memory.conflict_detected
+{ "conflicts": [{ "memoryId": "...", "content": "...", "severity": "high", "description": "..." }] }
+
+// memory.superseded
+{ "agentId": "...", "supersededIds": ["uuid1", "uuid2"] }
+```
+
+## Verifying signatures
+
+Every delivery is HMAC-SHA256 signed using the secret you saved at subscription time. The signature is in the `X-AgentMem-Signature` header as `sha256=<hex>`.
+
+Sample Node.js verification:
+
+```ts copy
+import crypto from 'node:crypto'
+
+function verify(rawBody: string, signatureHeader: string, secret: string): boolean {
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex')
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signatureHeader),
+    Buffer.from(expected),
+  )
+}
+```
+
+**Important:** sign over the raw request body, not the parsed JSON. Re-stringifying the JSON before computing the HMAC will produce a different signature (whitespace, key ordering) and reject every event.
+
+## Delivery semantics
+
+- **Fire-and-forget.** AgentMem POSTs your URL once, in parallel for all matching subscribers.
+- **No retries** in v1. If your endpoint is down, the event is dropped.
+- **No ordering guarantee** across events.
+- **5-second timeout** per delivery before AgentMem moves on.
+
+Build your handlers to be idempotent (use the `writeId` / `memoryId` as a dedup key if you re-process), and don't rely on receiving every event for correctness.
+
+## Listing subscriptions
+
+```ts copy
+const webhooks = await mem.listWebhooks()
+for (const w of webhooks) {
+  console.log(w.id, w.url, w.events, w.active)
+}
+```
+
+The signing secret is **not** included in list responses — it's only ever returned at creation time.

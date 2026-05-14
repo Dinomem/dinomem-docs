@@ -1,0 +1,49 @@
+# Re-ranking
+
+The default hybrid retrieval (semantic + keyword + graph, merged with RRF) is fast and broadly accurate. For queries where the *precision* of the top result matters more than latency — agent decisions, customer-facing responses, factual recall — turn on Gemini re-ranking.
+
+## How to use it
+
+```ts copy
+const hits = await mem.search({
+  query:   'what does Alice prefer for breakfast',
+  agentId: 'support-bot',
+  topK:    5,
+  rerank:  true,                  // ← opt-in
+})
+
+console.log(hits[0].relevance_score)   // 0–1, populated only when rerank: true
+```
+
+## What changes
+
+| | Default | `rerank: true` |
+|---|---|---|
+| Latency | ~50–150 ms | ~600–1700 ms |
+| Candidate pool | top `K` from hybrid | top `K*3` from hybrid, capped at 30, scored by Flash |
+| Sort key | `score` (RRF, position-based) | `relevance_score` (Gemini, 0–1) |
+| Extra cost | none | one `gemini-2.5-flash` call per request |
+
+`score` is still returned alongside `relevance_score` so you can compare or weight them yourself.
+
+## When to use it
+
+**Turn it on for:**
+- Single-shot Q&A where the wrong answer is expensive
+- "Find the one memory that answers this question" lookups
+- Final retrieval before an LLM response
+
+**Leave it off for:**
+- Bulk retrieval (you're going to re-rank later anyway, or feed all results to an LLM as context)
+- Hot-path agent loops where 1.5s latency is too much
+- Cost-sensitive workloads at scale
+
+## How it works
+
+When the flag is set, the search route fetches `topK * 3` candidates from `hybridSearch()` and passes them to `rerankWithGemini`:
+
+1. A structured-output schema asks `gemini-2.5-flash` for one `{id, score}` ranking per candidate, scored 0–1 on how directly each memory answers the query.
+2. The model returns the rankings; AgentMem re-sorts and slices to `topK`.
+3. If the Gemini call fails for any reason (rate-limit, timeout, malformed output), the request **falls back to the original RRF order** rather than 500-ing. `relevance_score` is set to the RRF `score` in that case.
+
+The candidate pool is capped at 30 memories to keep prompt size and cost bounded. With `topK=50` you still only re-rank 30; the remaining are sorted by RRF.

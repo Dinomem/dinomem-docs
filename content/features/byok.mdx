@@ -1,0 +1,53 @@
+# BYOK encryption
+
+For compliance-sensitive workloads, every memory's `content` field can be encrypted at rest with a key you control. We never see the plaintext after registration; reads are decrypted on the fly inside the API function.
+
+## Register a key
+
+```ts copy
+const result = await mem.registerByok(customerKeyBase64)
+// { ok: true, message: 'BYOK key registered for org' }
+```
+
+`customerKeyBase64` is a base64-encoded AES-GCM 256-bit key (32 bytes). Generate one once with `openssl rand -base64 32` and store it securely on your side — we do **not** retain a recoverable copy.
+
+The key is wrapped by our service master key before storage (so an attacker who exfiltrates the DB can't decrypt your memories without compromising the master), and unwrapped on each read for in-memory decryption.
+
+## Writes after registration
+
+Every write whose `content` field is non-empty is automatically encrypted. The response is unchanged; your code stays the same:
+
+```ts copy
+await mem.write({
+  content: 'sensitive: payment failed for customer #1234',
+  agentId: 'billing-bot',
+  scope:   'team',
+})
+// content stored as AES-GCM ciphertext + IV
+```
+
+The `encrypted: true` flag is set on the row and on `memory.written` webhook payloads so you can audit what was encrypted.
+
+## Reads transparently decrypt
+
+`GET /v1/memory/:id` and `POST /v1/memory/search` decrypt encrypted rows before returning. If decryption fails (very unusual — typically means the BYOK row was removed without re-encrypting historical data), the response substitutes `[encrypted — decryption failed]` for the content rather than 500-ing.
+
+## Remove a key
+
+```ts copy
+const result = await mem.removeByok()
+// { ok: true, warning: 'BYOK key removed — existing encrypted memories are now unreadable' }
+```
+
+**This is destructive.** Memories that were already encrypted under that key remain encrypted; without the key they're permanently unreadable. The warning is real.
+
+If you want to migrate to a new key, the right pattern is:
+
+1. Read every encrypted memory and re-write it under the new key (you have to do this client-side — we don't have a re-encrypt endpoint).
+2. *Then* call `removeByok()` followed by `registerByok(newKey)`.
+
+## Limits
+
+- BYOK encryption applies only to `content`. Other fields (`agent_id`, `scope`, `role`, `workflow_id`, `created_at`, the embedding) are unencrypted because the search engine needs them.
+- Embeddings are computed before encryption (from the plaintext you sent), but only the ciphertext is stored. This means semantic search still works on encrypted memories — the embedding leaks roughly as much information as a hash of the content.
+- One key per org. No per-workflow or per-agent keying in v1.

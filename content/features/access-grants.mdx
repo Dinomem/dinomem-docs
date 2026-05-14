@@ -1,0 +1,64 @@
+# Access grants
+
+`scope='private'` memories are visible only to the agent that wrote them. Access grants are the escape hatch: explicit, audited "share these memories with that agent" rows.
+
+## The visibility rule
+
+Within an org, memory `M` is visible to agent `A` if **any** of these are true:
+
+1. `M.agent_id = A` — A wrote it
+2. `M.scope ∈ ('team', 'global')` — non-private memories are visible to everyone in the org
+3. An active grant exists with `grantee_agent = A`, `grantor_role = M.role`, `resource_scope = M.scope`
+
+So a grant gives "agent X" access to "memories with role Y and scope Z" within the org.
+
+## Creating a grant
+
+```ts copy
+await mem.createGrant({
+  grantorRole:   'planner',     // memories with role='planner' become visible
+  granteeAgent:  'support-bot', // ...to this agent
+  resourceScope: 'private',     // ...for scope='private' memories
+  validTo:       null,          // null = indefinite; or ISO 8601 timestamp
+})
+```
+
+Typical pattern: an executor agent (`support-bot`) needs to see the planner's private decisions for a workflow. Grant `(planner, support-bot, private)`. The executor's `mem.search()` calls will now surface those private memories alongside its own.
+
+## Listing and revoking
+
+```ts copy
+const grants = await mem.listGrants()
+console.log(grants) // [{ id, grantor_role, grantee_agent, resource_scope, valid_from, valid_to, created_at }]
+
+await mem.revokeGrant(grantId)
+```
+
+Revoking hard-deletes the row. The audit log still preserves the trail.
+
+## Time-bounded grants
+
+For temporary collaboration ("agent A can see B's private notes for the duration of this workflow"), set `validTo`:
+
+```ts copy
+import { addHours } from 'date-fns'
+
+await mem.createGrant({
+  grantorRole:   'planner',
+  granteeAgent:  'support-bot',
+  resourceScope: 'private',
+  validTo:       addHours(new Date(), 24).toISOString(),
+})
+```
+
+The visibility check uses `valid_from <= now() < valid_to`, so the grant becomes a no-op the moment `validTo` passes, without needing a sweep.
+
+## What grants do NOT cover
+
+- **Cross-org sharing.** Grants are scoped to a single `org_id`. There's no concept of granting access to an agent in another org.
+- **Per-memory grants.** You grant access to a `(role, scope)` combination, not to individual memory IDs.
+- **Write permissions.** Grants are read-only. Writing a memory always uses the writer's own credentials; there's no "I'm writing on behalf of someone else" model.
+
+## Why this design
+
+The schema is intentionally coarse. Per-memory ACLs would explode the access-grants table, slow down search dramatically (a join per memory), and make the mental model harder. The role + scope tuple covers the realistic multi-agent sharing patterns (planner→executor, observer access, on-call agent backup) without giving up search performance.

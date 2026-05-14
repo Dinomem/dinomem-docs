@@ -1,0 +1,105 @@
+# Core concepts
+
+Read this once and the rest of the docs will make sense.
+
+## The unit: a memory
+
+A memory is a string of text plus metadata. AgentMem doesn't impose a schema on the content — store what's useful to your agent.
+
+```json
+{
+  "id":          "uuid",
+  "content":     "Customer prefers email",
+  "agent_id":    "support-bot",
+  "scope":       "team",
+  "role":        "executor",
+  "workflow_id": "wf-123",
+  "created_at":  "2026-05-14T10:00:00Z",
+  "expires_at":  null,
+  "vector_clock": { "support-bot": 7 }
+}
+```
+
+## Scopes — who can read what
+
+Every memory has a `scope` that controls visibility within the org:
+
+| Scope | Visible to |
+|---|---|
+| `private` | Only the writing agent, plus any agent with an [access grant](/features/access-grants). |
+| `team` | Every agent in the org. |
+| `global` | Every agent in the org. *Currently identical to `team`; future versions will separate cross-team sharing.* |
+
+**Default behavior:** if you store sensitive per-user info (passwords, payment data, "Alice asked about X"), use `private`. If it's general operational knowledge ("the deadline is Friday"), use `team`.
+
+## Roles — who wrote it
+
+Optional `role` field. Used by conflict resolution policies (`planner_wins`) and access grants.
+
+- `planner` — the agent that sets goals or decisions
+- `executor` — the agent that does the work
+- `observer` — read-only agent (e.g. logging, evaluation)
+
+Roles don't restrict who can write what — they're just metadata that policies can act on.
+
+## Workflows — grouping related memories
+
+The optional `workflowId` groups memories that belong to the same task or session. Use it whenever you have a logical "this is one job" boundary:
+
+- A multi-step customer-support conversation
+- A research task across multiple agents
+- A daily batch run
+
+Workflow-scoped operations exist for this reason: `mem.summarize(workflowId)` gives you a short text summary of every memory in the workflow; `mem.workflowMemories(workflowId)` returns the raw list; `mem.purgeWorkflow(workflowId)` deletes everything in it.
+
+## Vector clocks — what version is this
+
+Every write ticks a per-agent, per-scope counter. The resulting clock is stored on the memory row:
+
+```json
+{ "support-bot": 7, "billing-bot": 3 }
+```
+
+This is used internally by conflict detection to distinguish "concurrent write by an agent that didn't know about memory X" from "deliberate update that supersedes memory X". You usually don't read these directly; they're exposed on hits so observability tools can surface causality. See [History](/features/history) for the supersession lineage.
+
+## Conflicts and resolution
+
+When you write a memory that contradicts an existing one (e.g. agent A wrote "deadline is Friday" and you're writing "deadline is Monday"), AgentMem can:
+
+- **Detect the conflict** via a Gemini-based contradiction check before storing
+- **Apply a policy** — block the write, supersede the old memory, or fire a webhook for human review
+
+See [Conflict policies](/features/conflict-policies) for the full breakdown.
+
+## TTL and retention
+
+Two different cleanup mechanisms:
+
+- **TTL (`expires_at`)** — set on individual writes; memory disappears from search the moment its TTL passes. A background sweep soft-deletes the row and fires `memory.expired`. See [TTL](/features/ttl).
+- **Retention policies** — org-wide rule like "keep memories for 90 days, audit logs for 1 year". Runs on a separate cadence.
+
+## The retrieval pipeline
+
+When you call `search()`:
+
+1. Query is embedded (Gemini Embedding 2, 3072-dim).
+2. Three searches run **in parallel**:
+   - **Semantic** — pgvector cosine over content embeddings
+   - **Keyword** — Postgres `tsvector` BM25 ranking
+   - **Graph** — entity extraction from the query → graph traversal across `entities` + `relations`
+3. Results are merged with **Reciprocal Rank Fusion** (semantic weight 1.0, keyword 0.8, graph 0.6) and sliced to `topK`.
+4. (Optional) If `rerank: true`, top candidates are re-scored by `gemini-2.5-flash` for relevance.
+
+The `score` on each hit is the RRF score by default; with reranking, `relevance_score` is also populated and used for sorting.
+
+## What's stored where
+
+Single Postgres database, no Redis, no Neo4j, no Pinecone. The whole product is built on Supabase. The tables you'll encounter in the API:
+
+- `memory_events` — the memories themselves
+- `entities` + `relations` — the extracted graph (built async after each write)
+- `vector_clocks` — per-agent counters
+- `access_grants` — visibility grants
+- `webhook_subscriptions`, `conflict_policies`, `retention_policies`, `api_keys`, `teams` — config
+
+You never touch these directly; they exist behind the API.

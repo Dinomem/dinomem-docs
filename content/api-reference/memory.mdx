@@ -1,0 +1,138 @@
+# Memory endpoints
+
+Base URL: `https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api`
+
+All endpoints require `Authorization: Bearer <api-key>`.
+
+## `POST /v1/memory/write`
+
+Store a memory.
+
+**Body:**
+
+```json
+{
+  "content":    "string",
+  "agentId":    "string",
+  "scope":      "private | team | global",
+  "role":       "planner | executor | observer",  // optional
+  "workflowId": "string",                          // optional
+  "expiresAt":  "ISO-8601 timestamp"               // optional
+}
+```
+
+**Response 201:**
+
+```json
+{ "writeId": "uuid" }
+```
+
+If the content is a duplicate of an existing memory (same `content_hash` within the org), returns `200` with `{ "writeId": "<existing-id>", "duplicate": true }` instead of inserting again.
+
+If a conflict policy blocks the write, returns `409` with `{ "error": "...", "policy": "...", "conflicts": [...], "webhookFired": bool }`.
+
+## `POST /v1/memory/search`
+
+Hybrid retrieval.
+
+**Body:**
+
+```json
+{
+  "query":      "string",
+  "agentId":    "string",
+  "topK":       5,                                  // 1..50, default 5
+  "scope":      "private | team | global",          // optional
+  "workflowId": "string",                           // optional
+  "atTime":     "ISO-8601 timestamp",               // optional — temporal filter
+  "rerank":     false                                // optional — see Re-ranking
+}
+```
+
+**Response 200:** array of `MemoryHit`:
+
+```json
+[
+  {
+    "id":           "uuid",
+    "content":      "string",
+    "agent_id":     "string",
+    "scope":        "...",
+    "role":         "...",
+    "workflow_id":  "...",
+    "created_at":   "ISO-8601",
+    "score":        0.0,                  // RRF fusion score
+    "relevance_score": 0.0,               // only when rerank: true (0..1)
+    "vector_clock": { "agent-id": 1 }
+  }
+]
+```
+
+## `GET /v1/memory/:id`
+
+Fetch a single memory by ID. Returns `404` if not found or soft-deleted.
+
+**Response:**
+
+```json
+{
+  "id":            "uuid",
+  "content":       "string",
+  "agent_id":      "string",
+  "scope":         "...",
+  "role":          "...",
+  "workflow_id":   "...",
+  "created_at":    "...",
+  "expires_at":    "...",
+  "extracted":     true,
+  "encrypted":     false,
+  "vector_clock":  { ... },
+  "superseded_by": "uuid | null"
+}
+```
+
+## `GET /v1/memory/:id/history`
+
+CRDT lineage — see [History](/features/history) for context.
+
+**Response 200:**
+
+```json
+{
+  "memory":       Memory,
+  "supersededBy": Memory | null,
+  "supersedes":   Memory[]
+}
+```
+
+## `DELETE /v1/memory/:id`
+
+Soft-delete a memory. Sets `deleted_at = now()`. Always returns `204` even if the memory didn't exist (idempotent).
+
+Fires `memory.deleted` webhook.
+
+## `POST /v1/memory/conflicts`
+
+Check if a candidate write would conflict with existing memories, **without** actually writing.
+
+**Body:**
+
+```json
+{
+  "content":    "string",
+  "agentId":    "string",
+  "workflowId": "string",       // optional
+  "scope":      "private | team | global"
+}
+```
+
+**Response 200:** `{ "conflicts": [{ memoryId, content, agentId, severity, description }] }`
+
+## Batch endpoints
+
+```
+POST /v1/memory/batch/write    { writes: WriteParams[] }   → { results: [{writeId, duplicate, error}] }
+POST /v1/memory/batch/search   { searches: SearchParams[] } → { results: MemoryHit[][] }
+```
+
+Up to 100 operations per batch. Errors on individual items don't fail the batch.

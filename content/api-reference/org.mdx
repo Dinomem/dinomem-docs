@@ -1,0 +1,42 @@
+# Org settings
+
+Org-level configuration: encryption, retention, and usage reporting.
+
+## BYOK encryption
+
+See [BYOK](/features/byok) for the encryption model.
+
+```
+POST   /v1/org/byok              Body: { customerKey: "base64" }       Register key
+DELETE /v1/org/byok              Remove key (destructive — see warning)
+```
+
+## Retention
+
+See [Retention](/features/retention) for what the sweep does.
+
+```
+GET    /v1/org/retention         Returns { memoriesDays, auditDays, scratchDays }
+PUT    /v1/org/retention         Same shape — null = keep forever for memoriesDays
+```
+
+## Workflow usage
+
+Cost-attribution view: how many writes and searches each `workflowId` has run, day-by-day.
+
+```
+GET /v1/org/usage/workflows?days=30
+```
+
+**Response 200:**
+
+```json
+{
+  "workflows": {
+    "wf-123": { "writes": 412, "searches": 1834 },
+    "wf-456": { "writes": 90,  "searches": 220 }
+  }
+}
+```
+
+`days` defaults to 30, max 365. Aggregated server-side; this endpoint is read-only.

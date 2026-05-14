@@ -1,0 +1,10 @@
+{
+  "conflict-policies": "Conflict policies",
+  "ttl":               "TTL & expiry",
+  "reranking":         "Re-ranking",
+  "access-grants":     "Access grants",
+  "webhooks":          "Webhooks",
+  "history":           "History & lineage",
+  "byok":              "BYOK encryption",
+  "retention":         "Retention"
+}

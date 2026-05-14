@@ -1,0 +1,58 @@
+# Workflows & scratch endpoints
+
+## Workflows
+
+### `GET /v1/workflows/:id/memories`
+
+Return every memory belonging to a workflow, newest first.
+
+**Response 200:** `MemoryHit[]`
+
+### `POST /v1/workflows/:id/summarize`
+
+Generate a Gemini-based summary of every memory in the workflow.
+
+**Body:** `{ "agentId": "string" }`
+
+**Response 200:** `{ "summary": "string" }`
+
+Latency: ~1–3s (one Gemini call). Length scales with workflow size.
+
+### `POST /v1/workflows/:id/purge`
+
+Hard-delete every memory in the workflow. Audit-logged. Use with care.
+
+**Response 204** (no body)
+
+## Scratchpad
+
+The scratchpad is a workflow-scoped key/value store for transient agent state — extracted entities, in-flight reasoning, working notes. TTL-enforced; falls off automatically.
+
+### `POST /v1/scratch/set`
+
+**Body:**
+
+```json
+{
+  "workflowId": "string",
+  "key":        "string",
+  "value":      "string",
+  "ttl":        3600              // seconds
+}
+```
+
+**Response 200:** `{ "ok": true }`
+
+### `POST /v1/scratch/get`
+
+**Body:** `{ "workflowId": "string", "key": "string" }`
+
+**Response 200:** `{ "value": "string | null" }`
+
+Returns `null` if the key doesn't exist or has expired.
+
+### `POST /v1/scratch/del`
+
+**Body:** `{ "workflowId": "string", "key": "string" }`
+
+**Response 200:** `{ "ok": true }`

@@ -1,0 +1,39 @@
+# AgentMem
+
+**The memory layer for AI agents.** Postgres-native, TypeScript- and Python-first, framework-agnostic. Drop it into any agent stack (LangChain, LangGraph, CrewAI, Mastra, Claude SDK, custom) in three lines.
+
+```ts copy
+import { MemoryStore } from '@agentmem/sdk'
+
+const mem = new MemoryStore({ apiKey: process.env.AGENTMEM_API_KEY! })
+
+await mem.write({ content: 'Alice prefers email over phone', agentId: 'support-bot' })
+const hits = await mem.search({ query: 'how should I reach Alice?', agentId: 'support-bot' })
+```
+
+## What you get
+
+- **Write + search** with embeddings, BM25 keyword search, and entity-graph traversal — all merged with Reciprocal Rank Fusion. Optional [Gemini re-ranking](/features/reranking) for high-precision queries.
+- **Multi-agent coordination.** [Scopes](/concepts) (private / team / global) + roles (planner / executor / observer) + [access grants](/features/access-grants) give you fine-grained visibility control out of the box.
+- **CRDT conflict resolution.** Vector clocks per agent, [configurable policies](/features/conflict-policies) (`planner_wins`, `timestamp_wins`, `human_in_loop`), and [supersession lineage](/features/history) so you can audit who replaced what.
+- **TTL + retention.** [Memories expire](/features/ttl) automatically. [Retention policies](/features/retention) prune old data on a schedule.
+- **Webhooks.** Subscribe to `memory.written`, `memory.expired`, `memory.conflict_detected`, etc. — HMAC-signed payloads.
+- **BYOK encryption** for compliance-sensitive deployments.
+
+## Install
+
+```bash copy
+# TypeScript
+npm install @agentmem/sdk
+
+# Python
+pip install agentmem-py
+```
+
+## Where to next
+
+- [Getting started](/getting-started) — install, first write, first search, in 3 minutes.
+- [Core concepts](/concepts) — scopes, roles, workflows, vector clocks. Read this before you build anything non-trivial.
+- [Features](/features/conflict-policies) — deep-dives into each shipped feature.
+- [API reference](/api-reference/memory) — every endpoint with curl examples.
+- [SDK reference](/sdk-reference/typescript) — every method on the TS and Python clients.

@@ -1,0 +1,67 @@
+# Webhook endpoints
+
+CRUD for webhook subscriptions. For event types, payload shapes, and signature verification, see [Webhooks (concept)](/features/webhooks).
+
+## `GET /v1/webhooks`
+
+List all webhook subscriptions for the org.
+
+**Response 200:**
+
+```json
+{
+  "webhooks": [
+    {
+      "id":         "uuid",
+      "url":        "https://...",
+      "events":     ["memory.written", "memory.expired"],
+      "active":     true,
+      "created_at": "ISO-8601"
+    }
+  ]
+}
+```
+
+The signing `secret` is **never** returned by list — it's only available at creation.
+
+## `POST /v1/webhooks`
+
+Create a new subscription.
+
+**Body:**
+
+```json
+{
+  "url":    "https://...",
+  "events": ["memory.written", "memory.expired"]
+}
+```
+
+`events` must be a non-empty array of valid event names (see [Webhooks](/features/webhooks#event-types)). A constraint at the DB layer enforces the same allow-list.
+
+**Response 201:**
+
+```json
+{
+  "id":         "uuid",
+  "url":        "...",
+  "events":     [...],
+  "active":     true,
+  "created_at": "...",
+  "secret":     "hex-string"
+}
+```
+
+**Save the `secret`.** It's returned exactly once. Use it to verify HMAC signatures on incoming deliveries.
+
+## `PATCH /v1/webhooks/:id`
+
+Enable or disable a subscription without deleting it.
+
+**Body:** `{ "active": true }` or `{ "active": false }`
+
+Disabled subscriptions stop receiving events but stay in the table; re-enable any time.
+
+## `DELETE /v1/webhooks/:id`
+
+Permanently delete a subscription. `204` (no body).

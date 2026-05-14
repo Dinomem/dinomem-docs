@@ -1,0 +1,122 @@
+# Getting started
+
+This walks you from "never heard of AgentMem" to "memory working in an agent" in about three minutes.
+
+## 1. Get an API key
+
+Sign in at [agentmem.dev](https://agentmem.dev) and create an API key. Keys are scoped to an org. Store the resulting `sk-...` string somewhere safe — the dashboard only shows it once.
+
+## 2. Install the SDK
+
+import { Tabs } from 'nextra/components'
+
+<Tabs items={['TypeScript', 'Python']}>
+<Tabs.Tab>
+```bash copy
+npm install @agentmem/sdk
+# or
+pnpm add @agentmem/sdk
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```bash copy
+pip install agentmem-py
+```
+</Tabs.Tab>
+</Tabs>
+
+## 3. Write your first memory
+
+<Tabs items={['TypeScript', 'Python']}>
+<Tabs.Tab>
+```ts copy
+import { MemoryStore } from '@agentmem/sdk'
+
+const mem = new MemoryStore({ apiKey: process.env.AGENTMEM_API_KEY! })
+
+const { writeId } = await mem.write({
+  content: 'Customer prefers email over phone. Escalation threshold is $500.',
+  agentId: 'support-bot',
+  scope:   'team',          // private | team | global — see Concepts
+  role:    'executor',      // optional — used by conflict policies
+  workflowId: 'wf-123',     // optional — groups related memories
+})
+
+console.log({ writeId })
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python copy
+import os
+from agentmem_py import MemoryStore
+
+mem = MemoryStore(api_key=os.environ["AGENTMEM_API_KEY"])
+
+result = mem.write(
+    content="Customer prefers email over phone. Escalation threshold is $500.",
+    agent_id="support-bot",
+    scope="team",
+    role="executor",
+    workflow_id="wf-123",
+)
+print(result.write_id)
+```
+</Tabs.Tab>
+</Tabs>
+
+The call returns as soon as the memory is written and indexed. Entity extraction (for graph search) happens asynchronously in the background.
+
+## 4. Search
+
+<Tabs items={['TypeScript', 'Python']}>
+<Tabs.Tab>
+```ts copy
+const hits = await mem.search({
+  query:   'how do we handle customer escalations?',
+  agentId: 'support-bot',
+  topK:    5,
+})
+
+for (const hit of hits) {
+  console.log(hit.score, hit.content)
+}
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python copy
+hits = mem.search(
+    query="how do we handle customer escalations?",
+    agent_id="support-bot",
+    top_k=5,
+)
+for hit in hits:
+    print(hit.score, hit.content)
+```
+</Tabs.Tab>
+</Tabs>
+
+Under the hood, AgentMem runs three retrieval strategies in parallel — semantic similarity (pgvector), keyword (BM25), and entity-graph traversal — and merges them with Reciprocal Rank Fusion. The returned `score` is the fused score.
+
+For higher precision (at the cost of ~500–1500ms of latency), pass `rerank: true` and AgentMem will re-score the top candidates with Gemini. See [Re-ranking](/features/reranking).
+
+## 5. What to read next
+
+- **[Core concepts](/concepts)** — what scopes, roles, and workflows mean, and how they interact. Don't skip this; the model is opinionated and easier to use once you understand it.
+- **[Conflict policies](/features/conflict-policies)** — what happens when two agents write contradictory facts.
+- **[Webhooks](/features/webhooks)** — subscribe to events from your backend.
+
+## REST equivalent
+
+Every SDK call is a thin wrapper over the REST API. The above two calls in `curl`:
+
+```bash copy
+curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/memory/write \
+  -H "Authorization: Bearer $AGENTMEM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Customer prefers email","agentId":"support-bot","scope":"team"}'
+
+curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/memory/search \
+  -H "Authorization: Bearer $AGENTMEM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"customer escalations","agentId":"support-bot","topK":5}'
+```

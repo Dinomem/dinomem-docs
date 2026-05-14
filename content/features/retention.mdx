@@ -1,0 +1,56 @@
+# Retention
+
+Per-org rules that soft-delete old memories, hard-delete old audit logs, and clean up the scratchpad. Use this when "we don't want to keep stuff forever" is a legal or storage-cost requirement.
+
+## Read the current policy
+
+```ts copy
+const retention = await mem.getRetention()
+// { memoriesDays: 365, auditDays: 365, scratchDays: 30 }
+```
+
+If no policy has been set for the org, the response uses defaults: `memoriesDays: null` (keep forever), `auditDays: 365`, `scratchDays: 30`.
+
+## Set a policy
+
+```ts copy
+await mem.setRetention({
+  memoriesDays: 90,    // soft-delete memories older than 90 days; null = keep forever
+  auditDays:    365,   // hard-delete audit logs older than 1 year
+  scratchDays:  7,     // delete scratchpad entries older than 1 week
+})
+```
+
+Policy is per-org. There's no per-workflow override in v1.
+
+## What the sweep actually does
+
+The retention sweep (a Postgres function `enforce_retention(org_id)`) does three things when called:
+
+- **Memories**: rows older than `memoriesDays` get `deleted_at = now()`. Search already hides soft-deleted rows. Data is still in the table for an indefinite period — there's no hard-delete-after-soft-delete schedule in v1.
+- **Audit log**: rows older than `auditDays` are **hard-deleted**. Audit logs are append-only and can't reference your data once they're gone.
+- **Scratchpad**: rows older than `scratchDays` are hard-deleted (in addition to TTL-based expiry which is already enforced on read).
+
+## Operator setup
+
+`enforce_retention` ships as a callable SQL function but is **not** scheduled by default. To run it on a cadence, add a pg_cron job in your project:
+
+```sql copy
+create extension if not exists pg_cron;
+
+-- Run nightly at 03:00 UTC, once per org
+select cron.schedule(
+  'agentmem-retention',
+  '0 3 * * *',
+  $cron$
+  select public.enforce_retention(org_id)
+  from   public.retention_policies;
+  $cron$
+);
+```
+
+Until you schedule it, retention policies are *documented intent* but no data is actually purged.
+
+## Relationship to TTL
+
+[TTL](/features/ttl) is per-memory and enforced at search time (rows hide immediately when `expires_at` passes). Retention is per-org and runs on a schedule. The two are independent — a memory with no TTL is still subject to retention, and a TTL'd memory is also subject to retention if its `created_at` is older than `memoriesDays`.

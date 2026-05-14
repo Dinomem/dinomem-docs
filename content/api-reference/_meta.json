@@ -1,0 +1,7 @@
+{
+  "memory":    "Memory",
+  "workflows": "Workflows & scratch",
+  "admin":     "Keys, teams, policies, grants",
+  "webhooks":  "Webhooks",
+  "org":       "Org settings"
+}
