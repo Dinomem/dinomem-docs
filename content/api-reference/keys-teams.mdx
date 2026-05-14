@@ -2,9 +2,11 @@
 
 Org-admin endpoints for managing access, conflict resolution, and team membership.
 
-## API keys — `/v1/keys`
+## API keys
 
-```
+Path: `/v1/keys`
+
+```http
 GET    /v1/keys                  List org's API keys (returns metadata, not secrets)
 POST   /v1/keys                  Create new key. Body: { name, tier?, scopedAgent?, scopedScope? }.
                                  Response includes `key` — shown ONCE, store it.
@@ -15,9 +17,11 @@ DELETE /v1/keys/:id              Revoke a key
 
 **Scoped keys** let you restrict a key to a single `agentId` + `scope`, useful for handing keys to individual agents.
 
-## Teams — `/v1/teams`
+## Teams
 
-```
+Path: `/v1/teams`
+
+```http
 GET    /v1/teams                 List teams in the org
 POST   /v1/teams                 Body: { name }
 DELETE /v1/teams/:id             Delete a team
@@ -25,9 +29,11 @@ DELETE /v1/teams/:id             Delete a team
 
 In v1, teams are namespaces — they group agents but don't yet drive visibility. Future versions will tie `scope='team'` to team membership.
 
-## Conflict policies — `/v1/policies`
+## Conflict policies
 
-```
+Path: `/v1/policies`
+
+```http
 GET    /v1/policies              List configured policies (one per workflow + one org default)
 PUT    /v1/policies              Body: { policy, workflowId?, webhookUrl? }
                                  workflowId omitted = org-wide default
@@ -36,9 +42,11 @@ DELETE /v1/policies/:id          Remove a policy
 
 `policy` is one of `ignore | planner_wins | timestamp_wins | human_in_loop`. See [Conflict policies](/features/conflict-policies) for what each does.
 
-## Access grants — `/v1/grants`
+## Access grants
 
-```
+Path: `/v1/grants`
+
+```http
 GET    /v1/grants                List grants for the org
 POST   /v1/grants                Body: { grantorRole, granteeAgent, resourceScope, validTo? }
 DELETE /v1/grants/:id            Revoke a grant
