@@ -1,4 +1,9 @@
 {
+  "mcp":               "MCP server",
+  "mastra":            "Mastra integration",
+  "claude-agent":      "Claude Agent SDK",
+  "vercel-ai":         "Vercel AI SDK",
+  "crewai":            "CrewAI",
   "conflict-policies": "Conflict policies",
   "ttl":               "TTL & expiry",
   "reranking":         "Re-ranking",

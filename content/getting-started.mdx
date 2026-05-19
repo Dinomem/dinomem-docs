@@ -8,6 +8,14 @@ Sign in at [agentmem.dev](https://agentmem.dev) and create an API key. Keys are 
 
 ## 2. Install the SDK
 
+The fastest path is the init CLI — it detects your project, installs the SDK, drops an env placeholder, and writes a demo script:
+
+```bash copy
+npx @agentmem/cli init
+```
+
+Or install the SDK manually:
+
 import { Tabs } from 'nextra/components'
 
 <Tabs items={['TypeScript', 'Python']}>
@@ -102,6 +110,7 @@ For higher precision (at the cost of ~500–1500ms of latency), pass `rerank: tr
 ## 5. What to read next
 
 - **[Core concepts](/concepts)** — what scopes, roles, and workflows mean, and how they interact. Don't skip this; the model is opinionated and easier to use once you understand it.
+- **[MCP server](/features/mcp)** — give Claude Desktop, Claude Code, or Cursor shared memory with one config block.
 - **[Conflict policies](/features/conflict-policies)** — what happens when two agents write contradictory facts.
 - **[Webhooks](/features/webhooks)** — subscribe to events from your backend.
 

@@ -1,0 +1,53 @@
+# MCP server
+
+`@agentmem/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes AgentMem as tools to any MCP-compatible agent — Claude Desktop, Claude Code, Cursor, Continue, and others.
+
+The agent gets shared memory with one config block. No SDK code to write.
+
+## Install
+
+Add to your MCP client config (`claude_desktop_config.json`, `.cursor/mcp.json`, etc.):
+
+```json copy
+{
+  "mcpServers": {
+    "agentmem": {
+      "command": "npx",
+      "args":    ["-y", "@agentmem/mcp"],
+      "env":     { "AGENTMEM_API_KEY": "sk-..." }
+    }
+  }
+}
+```
+
+Get a key at [agentmem.dev](https://agentmem.dev). Restart your client.
+
+## Tools
+
+| Name | Purpose |
+|---|---|
+| `memory_write` | Persist a fact to long-term memory. |
+| `memory_search` | Hybrid retrieval (semantic + keyword + entity graph). |
+| `memory_get` | Fetch a memory by id. |
+| `memory_delete` | Soft-delete a memory. |
+| `memory_check_conflicts` | Detect contradictions before a write. |
+| `scratch_set` | Store transient working memory with optional TTL. |
+| `scratch_get` | Read a scratchpad key. |
+| `workflow_summarize` | Generate a Markdown brief over a workflow's memories. |
+
+Each tool's input schema and description is read by the model at tool-selection time, so the agent picks the right one without prompting hints.
+
+## Self-hosting
+
+Point `AGENTMEM_BASE_URL` at your own AgentMem deployment:
+
+```json
+"env": {
+  "AGENTMEM_API_KEY":  "sk-...",
+  "AGENTMEM_BASE_URL": "https://memory.your-domain.com/v1"
+}
+```
+
+## Transport
+
+The server speaks stdio (the standard MCP transport for local servers). It runs as a Node process spawned by your MCP client. A remote HTTP endpoint is planned for browser-based clients.

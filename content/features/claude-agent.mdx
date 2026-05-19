@@ -1,0 +1,82 @@
+# Claude Agent SDK integration
+
+`@agentmem/claude-agent` is the integration for [Anthropic's Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript). It gives you two ways to wire AgentMem into your agent — use either or both.
+
+```bash copy
+npm install @agentmem/claude-agent @anthropic-ai/claude-agent-sdk zod
+```
+
+## Two integration patterns
+
+### Pattern A — in-process MCP server (agent calls tools when it decides)
+
+```ts copy
+import { query } from '@anthropic-ai/claude-agent-sdk'
+import { agentmemMcpServer } from '@agentmem/claude-agent'
+
+const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'bot' }
+
+const result = query({
+  prompt: '...',
+  options: {
+    mcpServers: { agentmem: agentmemMcpServer(cfg) },
+  },
+})
+```
+
+Agent gets 8 memory tools (`memory_write`, `memory_search`, `memory_get`, `memory_delete`, `memory_check_conflicts`, `scratch_set`, `scratch_get`, `workflow_summarize`). No separate process — the server runs in your Node.
+
+### Pattern B — recall hook (memories auto-inject every turn)
+
+```ts copy
+import { query } from '@anthropic-ai/claude-agent-sdk'
+import { agentmemRecallHook } from '@agentmem/claude-agent'
+
+const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'bot' }
+
+query({
+  prompt: '...',
+  options: {
+    hooks: {
+      UserPromptSubmit: [{ hooks: [agentmemRecallHook(cfg)] }],
+    },
+  },
+})
+```
+
+Every user prompt triggers a memory search; the top hits are spliced into the agent's context as `additionalContext`. The agent never has to call a tool — memories just appear. If search fails (network, auth), the hook logs to stderr and returns empty so the turn proceeds.
+
+### Recommended — use both
+
+Hook gives passive context every turn; tools let the agent dig deeper or write durable facts.
+
+```ts copy
+query({
+  prompt: '...',
+  options: {
+    mcpServers: { agentmem: agentmemMcpServer(cfg) },
+    hooks:      { UserPromptSubmit: [{ hooks: [agentmemRecallHook(cfg)] }] },
+  },
+})
+```
+
+## Recall hook options
+
+| Option | Default | Purpose |
+|---|---|---|
+| `apiKey` | — | Required. |
+| `agentId` | — | Required. |
+| `baseUrl` | hosted | Self-host override. |
+| `workflowId` | — | Limit to a workflow. |
+| `scope` | all | Limit to `private`/`team`/`global`. |
+| `topK` | 5 | Number of memories per turn. |
+| `rerank` | false | Re-score with Gemini (+500-1500ms). |
+| `minScore` | 0 | Skip hits below this score. |
+| `prefix` | default preamble | Custom text before the memory block. |
+
+## Comparison to `@agentmem/mcp`
+
+- **`@agentmem/mcp`** is a standalone stdio server for client apps that spawn MCP processes (Claude Desktop, Cursor).
+- **`@agentmem/claude-agent`** runs in your Node code that calls `query()` directly, no separate process — plus the recall hook.
+
+Use both if you're building both a desktop client *and* a programmatic agent.

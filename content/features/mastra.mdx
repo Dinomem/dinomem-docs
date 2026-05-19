@@ -1,0 +1,82 @@
+# Mastra integration
+
+`@agentmem/mastra` is a drop-in memory layer for [Mastra](https://mastra.ai) agents. It ships an `Integration` subclass and two pre-built tools — `memorize` and `remember` — that an agent can call without you having to wrap anything.
+
+## Install
+
+```bash copy
+npm install @agentmem/mastra @mastra/core zod
+```
+
+`@mastra/core` and `zod` are peer dependencies (Mastra projects already have them).
+
+## Wire it up
+
+```ts copy
+import { Agent } from '@mastra/core/agent'
+import {
+  AgentMemIntegration,
+  agentmemMemorize,
+  agentmemRemember,
+} from '@agentmem/mastra'
+
+const agentmem = new AgentMemIntegration({
+  apiKey:  process.env.AGENTMEM_API_KEY!,
+  agentId: 'support-bot',          // default for every memory operation
+  scope:   'team',                 // optional default
+})
+
+const agent = new Agent({
+  name: 'support',
+  instructions:
+    'You help customers. When you learn a durable fact (preference, decision, ' +
+    'constraint), call `memorize`. Before answering, call `remember` to recall ' +
+    'prior context.',
+  tools: {
+    memorize: agentmemMemorize(agentmem),
+    remember: agentmemRemember(agentmem),
+  },
+})
+```
+
+The agent will pick up the tools automatically.
+
+## What each tool does
+
+### `memorize`
+
+| Input | Type | Notes |
+|---|---|---|
+| `statement` | string | Required. The fact to remember. |
+| `agentId` | string | Optional. Override the integration default. |
+| `workflowId` | string | Optional. |
+| `scope` | `private \| team \| global` | Optional. |
+| `role` | `planner \| executor \| observer` | Optional. |
+
+Returns a short confirmation string the model can use as a tool result.
+
+### `remember`
+
+| Input | Type | Notes |
+|---|---|---|
+| `question` | string | Required. Natural-language query. |
+| `agentId` | string | Optional. |
+| `workflowId` | string | Optional. |
+| `topK` | int (1–50) | Default 5. |
+| `scope` | `private \| team \| global` | Optional. |
+
+Returns a **prompt-prefixed string** the agent can splice directly into its reasoning. Empty string if no memories match.
+
+## Without the tools
+
+The integration class also exposes direct methods for custom flows:
+
+```ts copy
+const text = await agentmem.searchMemory('escalation policy?', { agentId: 'bot' })
+const hits = await agentmem.searchMemoryRaw('escalation policy?', { agentId: 'bot' })
+await agentmem.createMemory('Customer prefers email.', { agentId: 'bot' })
+```
+
+## Defaults and overrides
+
+Merge order: tool input → factory defaults → integration config → error if `agentId` is still missing.

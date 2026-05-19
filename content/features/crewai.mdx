@@ -1,0 +1,77 @@
+# CrewAI integration
+
+`agentmem-crewai` is the Python integration for [CrewAI](https://crewai.com). It ships two pre-built tools that match the shape of CrewAI's built-in `RecallMemoryTool` / `RememberTool` — agents get hybrid retrieval and Postgres-native storage with one config object, no changes to the rest of your Crew code.
+
+```bash copy
+pip install agentmem-crewai
+```
+
+## Quick start
+
+```python copy
+from crewai import Agent, Crew, Task
+from agentmem_crewai import AgentMemConfig, create_agentmem_tools
+
+config = AgentMemConfig(
+    api_key="sk-...",
+    agent_id="support-bot",
+    scope="team",        # optional default
+)
+
+support = Agent(
+    role="Support specialist",
+    goal="Help customers and remember what they prefer.",
+    backstory="...",
+    tools=create_agentmem_tools(config),
+)
+
+crew = Crew(agents=[support], tasks=[Task(...)])
+crew.kickoff()
+```
+
+The agent gets two tools: **Search memory** (recall) and **Save to memory** (remember). Same names as CrewAI's built-ins — agents pick them up automatically.
+
+## Tools
+
+| Tool | Purpose | Input |
+|---|---|---|
+| `AgentMemRecallTool` | Hybrid search (semantic + keyword + graph). | `queries: list[str]` |
+| `AgentMemRememberTool` | Persist one or more facts. | `contents: list[str]` |
+
+Both shapes are identical to CrewAI's built-ins (same `name`, `args_schema`, schema fields). The model doesn't need re-prompting — it'll use these tools without any tuning.
+
+## Helpers (without tools)
+
+For pre-task setup, post-task extraction, or any flow outside the agent loop:
+
+```python copy
+from agentmem_crewai import add_memory, recall_memories, search_memories
+
+# Pre-task: inject memories into a task description
+context = recall_memories("what does this customer prefer?", config)
+# → "Relevant memories...\n- (score=0.85) ..."
+
+# Raw hits for custom rendering
+hits = search_memories("escalation policy", config)
+
+# Post-task: persist a finding
+add_memory("Customer asked about Q4 pricing.", config)
+```
+
+## Config
+
+| Field | Default | Purpose |
+|---|---|---|
+| `api_key` | — | Required. |
+| `agent_id` | — | Required. |
+| `base_url` | hosted | Self-host override. |
+| `scope` | `private` | Default visibility for writes. |
+| `role` | — | Default agent role. |
+| `workflow_id` | — | Group memories by workflow / session. |
+| `top_k` | 5 | Hits per recall. |
+| `rerank` | false | Re-score with Gemini (+0.5-1.5s). |
+| `min_score` | 0.0 | Drop hits below this score. |
+
+## What this replaces
+
+CrewAI's built-in memory uses LanceDB locally (or Mem0 if you configure that provider). This package gives you AgentMem's Postgres-native memory through the same tool interface — no `Memory` class rewrite, no separate storage stack, no per-agent LanceDB files.
