@@ -1,0 +1,35 @@
+# Benchmark
+
+AgentMem ships with a reproducible benchmark in a separate repo: [`agentmem-bench`](https://github.com/rooney011/agentmem-bench).
+
+It tests **multi-agent memory** — the cases LoCoMo / LongMemEval / ConvoMem don't cover:
+
+| Scenario | What it tests |
+|---|---|
+| **S1** Contradictory writes | Two agents disagree; does the system surface or resolve? |
+| **S2** Temporal validity | `at_time` queries — what did we believe at T? |
+| **S3** Scope enforcement | Private memory must not leak across agents |
+| **S4** CRDT convergence | Concurrent writes converge to the same state (the headline differentiator) |
+| **S5** Cross-workflow isolation | Workflow A search must not return workflow B content |
+| **S6** Policy fidelity | `planner_wins` / `timestamp_wins` / HITL produce documented outcomes |
+| **S7** Operational | Latency p50/p95 + cost per 1K ops |
+
+## Comparison set
+
+7 systems run on the same hardware, same scenarios, same scoring: **AgentMem**, **Mem0**, **Zep**, **Cognee**, **Supermemory**, **LangMem**, and a **pgvector** baseline. The pgvector baseline is the floor — if a scenario can be passed by raw vector search alone, it isn't measuring memory-system value.
+
+## Reproducibility constraints
+
+- One command: `uv run python -m agentmem_bench --sut all --scenarios all`
+- Full run under **$30** in API spend (pre-flight estimator aborts if exceeded)
+- All LLMs pinned to specific version strings — no `latest`
+- Fixture data committed; deterministic seeds
+- Results published as GitHub Release artifacts, not git history
+
+## Status
+
+**Design phase.** The methodology is fully specified in [`DESIGN.md`](https://github.com/rooney011/agentmem-bench/blob/main/DESIGN.md). Harness implementation lands in a follow-up — see the implementation plan §10 in that doc.
+
+## Why we publish the methodology before the numbers
+
+Existing memory benchmarks publish results no one can reproduce — they ship harnesses with hidden assumptions about API keys, container versions, or model snapshots. We're inverting that: the methodology is public and immutable first, so the numbers (when they land) are auditable from day one.

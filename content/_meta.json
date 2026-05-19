@@ -4,5 +4,6 @@
   "concepts":        "Core concepts",
   "features":        "Features",
   "api-reference":   "API reference",
-  "sdk-reference":   "SDK reference"
+  "sdk-reference":   "SDK reference",
+  "benchmark":       "Benchmark"
 }
