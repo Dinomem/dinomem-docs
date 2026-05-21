@@ -2,9 +2,14 @@
 
 This walks you from "never heard of AgentMem" to "memory working in an agent" in about three minutes.
 
-## 1. Get an API key
+## 1. Sign up and get an API key
 
-Sign in at [agentmem.dev](https://agentmem.dev) and create an API key. Keys are scoped to an org. Store the resulting `sk-...` string somewhere safe — the dashboard only shows it once.
+1. Open the dashboard: [agentmem-dashboard.vercel.app](https://agentmem-dashboard.vercel.app)
+2. Click **"No account? Sign up"** — enter your email, a password, and (optionally) an organization name. An org is created for you automatically.
+3. Confirm the email Supabase sends you (or sign in directly if email confirmation is off for the project).
+4. You'll land on the **API Keys** tab. Click **Create key**, give it a name, copy the `sk-...` shown once — the dashboard won't show it again.
+
+Keys are scoped to your org. To bring in a teammate, go to the **Members** tab → invite by email → share the generated link. They sign up via that link and land in your org instead of getting a new one.
 
 ## 2. Install the SDK
 

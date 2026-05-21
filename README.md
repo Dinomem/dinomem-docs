@@ -1,6 +1,6 @@
 # AgentMem Docs
 
-Source for the official [AgentMem](https://agentmem.dev) documentation site.
+Source for the official [AgentMem](https://agentmem-dashboard.vercel.app) documentation site.
 
 Built with [Nextra 4](https://nextra.site) + Next.js 15.
 
@@ -20,8 +20,9 @@ nearest `_meta.json`. The route is the filename minus extension; an
 
 ## Deploy
 
-Connected to Vercel — every push to `main` triggers a production build at
-[docs.agentmem.dev](https://docs.agentmem.dev) (once DNS is wired).
+Connected to Vercel — every push to `main` triggers a production build.
+The dashboard lives at [agentmem-dashboard.vercel.app](https://agentmem-dashboard.vercel.app);
+the docs deploy at the Vercel-assigned URL for this repo (custom domain TBD).
 
 ## License
 
