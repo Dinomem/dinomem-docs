@@ -40,7 +40,7 @@ create extension if not exists pg_cron;
 
 -- Run nightly at 03:00 UTC, once per org
 select cron.schedule(
-  'agentmem-retention',
+  'dinomem-retention',
   '0 3 * * *',
   $cron$
   select public.enforce_retention(org_id)

@@ -1,23 +1,23 @@
 # TypeScript SDK reference
 
-Package: [`@agentmem/sdk`](https://www.npmjs.com/package/@agentmem/sdk) (Apache-2.0).
+Package: [`@dinomem/sdk`](https://www.npmjs.com/package/@dinomem/sdk) (Apache-2.0).
 
 ```bash
-npm install @agentmem/sdk
+npm install @dinomem/sdk
 ```
 
 ## Initialize
 
 ```ts
-import { MemoryStore, AgentMemError, DEFAULT_BASE_URL } from '@agentmem/sdk'
+import { MemoryStore, DinoMemError, DEFAULT_BASE_URL } from '@dinomem/sdk'
 
 const mem = new MemoryStore({
-  apiKey:  process.env.AGENTMEM_API_KEY!,
+  apiKey:  process.env.DINOMEM_API_KEY!,
   baseUrl: DEFAULT_BASE_URL,        // optional — override for self-hosting
 })
 ```
 
-Every method throws `AgentMemError` on non-2xx responses; the error has a `.status` field with the HTTP code.
+Every method throws `DinoMemError` on non-2xx responses; the error has a `.status` field with the HTTP code.
 
 ## Memory
 
@@ -148,9 +148,9 @@ import type {
   Retention, WorkflowUsage,
   BatchWriteResult, BatchSearchResult,
   Scope, Role, ConflictPolicy,
-} from '@agentmem/sdk'
+} from '@dinomem/sdk'
 ```
 
 ## Source
 
-[github.com/rooney011/agentmem-sdk](https://github.com/rooney011/agentmem-sdk) (TypeScript source under `typescript/`).
+[github.com/DinoMem/dinomem-sdk](https://github.com/DinoMem/dinomem-sdk) (TypeScript source under `typescript/`).

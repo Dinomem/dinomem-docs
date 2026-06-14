@@ -1,9 +1,9 @@
 # Claude Agent SDK integration
 
-`@agentmem/claude-agent` is the integration for [Anthropic's Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript). It gives you two ways to wire AgentMem into your agent — use either or both.
+`@dinomem/claude-agent` is the integration for [Anthropic's Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript). It gives you two ways to wire DinoMem into your agent — use either or both.
 
 ```bash copy
-npm install @agentmem/claude-agent @anthropic-ai/claude-agent-sdk zod
+npm install @dinomem/claude-agent @anthropic-ai/claude-agent-sdk zod
 ```
 
 ## Two integration patterns
@@ -12,14 +12,14 @@ npm install @agentmem/claude-agent @anthropic-ai/claude-agent-sdk zod
 
 ```ts copy
 import { query } from '@anthropic-ai/claude-agent-sdk'
-import { agentmemMcpServer } from '@agentmem/claude-agent'
+import { dinomemMcpServer } from '@dinomem/claude-agent'
 
-const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'bot' }
+const cfg = { apiKey: process.env.DINOMEM_API_KEY!, agentId: 'bot' }
 
 const result = query({
   prompt: '...',
   options: {
-    mcpServers: { agentmem: agentmemMcpServer(cfg) },
+    mcpServers: { dinomem: dinomemMcpServer(cfg) },
   },
 })
 ```
@@ -30,15 +30,15 @@ Agent gets 8 memory tools (`memory_write`, `memory_search`, `memory_get`, `memor
 
 ```ts copy
 import { query } from '@anthropic-ai/claude-agent-sdk'
-import { agentmemRecallHook } from '@agentmem/claude-agent'
+import { dinomemRecallHook } from '@dinomem/claude-agent'
 
-const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'bot' }
+const cfg = { apiKey: process.env.DINOMEM_API_KEY!, agentId: 'bot' }
 
 query({
   prompt: '...',
   options: {
     hooks: {
-      UserPromptSubmit: [{ hooks: [agentmemRecallHook(cfg)] }],
+      UserPromptSubmit: [{ hooks: [dinomemRecallHook(cfg)] }],
     },
   },
 })
@@ -54,8 +54,8 @@ Hook gives passive context every turn; tools let the agent dig deeper or write d
 query({
   prompt: '...',
   options: {
-    mcpServers: { agentmem: agentmemMcpServer(cfg) },
-    hooks:      { UserPromptSubmit: [{ hooks: [agentmemRecallHook(cfg)] }] },
+    mcpServers: { dinomem: dinomemMcpServer(cfg) },
+    hooks:      { UserPromptSubmit: [{ hooks: [dinomemRecallHook(cfg)] }] },
   },
 })
 ```
@@ -74,9 +74,9 @@ query({
 | `minScore` | 0 | Skip hits below this score. |
 | `prefix` | default preamble | Custom text before the memory block. |
 
-## Comparison to `@agentmem/mcp`
+## Comparison to `@dinomem/mcp`
 
-- **`@agentmem/mcp`** is a standalone stdio server for client apps that spawn MCP processes (Claude Desktop, Cursor).
-- **`@agentmem/claude-agent`** runs in your Node code that calls `query()` directly, no separate process — plus the recall hook.
+- **`@dinomem/mcp`** is a standalone stdio server for client apps that spawn MCP processes (Claude Desktop, Cursor).
+- **`@dinomem/claude-agent`** runs in your Node code that calls `query()` directly, no separate process — plus the recall hook.
 
 Use both if you're building both a desktop client *and* a programmatic agent.

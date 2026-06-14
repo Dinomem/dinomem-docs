@@ -1,6 +1,6 @@
 # History & lineage
 
-When `timestamp_wins` resolution fires, AgentMem soft-deletes the old conflicting memories and back-links them to the new one via a `superseded_by` column. The `/history` endpoint surfaces that lineage for auditing and debugging.
+When `timestamp_wins` resolution fires, DinoMem soft-deletes the old conflicting memories and back-links them to the new one via a `superseded_by` column. The `/history` endpoint surfaces that lineage for auditing and debugging.
 
 ## Reading lineage
 
@@ -59,7 +59,7 @@ The clocks let you answer "did the new write *know* about the old one before con
 
 ```bash
 curl -X GET https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/memory/<id>/history \
-  -H "Authorization: Bearer $AGENTMEM_API_KEY"
+  -H "Authorization: Bearer $DINOMEM_API_KEY"
 ```
 
 Returns `{ memory, supersededBy, supersedes }`.

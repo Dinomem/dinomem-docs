@@ -1,9 +1,9 @@
 # Python SDK reference
 
-Package: [`agentmem-py`](https://pypi.org/project/agentmem-py/) (Apache-2.0).
+Package: [`dinomem-py`](https://pypi.org/project/dinomem-py/) (Apache-2.0).
 
 ```bash
-pip install agentmem-py
+pip install dinomem-py
 ```
 
 Python ≥ 3.8. Depends only on `httpx`.
@@ -12,10 +12,10 @@ Python ≥ 3.8. Depends only on `httpx`.
 
 ```python
 import os
-from agentmem_py import MemoryStore
+from dinomem_py import MemoryStore
 
 mem = MemoryStore(
-    api_key=os.environ["AGENTMEM_API_KEY"],
+    api_key=os.environ["DINOMEM_API_KEY"],
     base_url=None,                  # None = use SDK default
 )
 ```
@@ -24,7 +24,7 @@ mem = MemoryStore(
 
 ```python
 import asyncio
-from agentmem_py import AsyncMemoryStore
+from dinomem_py import AsyncMemoryStore
 
 async def main():
     async with AsyncMemoryStore(api_key="sk-...") as mem:
@@ -67,7 +67,7 @@ hits = mem.search(
 ## What's exported
 
 ```python
-from agentmem_py import (
+from dinomem_py import (
     MemoryStore, AsyncMemoryStore,
     MemoryHit, Conflict,
 )
@@ -77,4 +77,4 @@ The Python SDK in v0.2 covers `write`, `search`, and conflict-detection response
 
 ## Source
 
-[github.com/rooney011/agentmem-sdk](https://github.com/rooney011/agentmem-sdk) (Python source under `python/`).
+[github.com/DinoMem/dinomem-sdk](https://github.com/DinoMem/dinomem-sdk) (Python source under `python/`).

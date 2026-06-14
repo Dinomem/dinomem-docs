@@ -2,7 +2,7 @@
 
 When agent A writes "deadline is Friday" and agent B later writes "deadline is Monday", you have a contradiction. Without a policy, both memories sit in the database and your retrieval surfaces both — confusing the next agent that reads them.
 
-AgentMem runs a Gemini-based contradiction check before every write (when a policy is set) and applies the org's configured policy.
+DinoMem runs a Gemini-based contradiction check before every write (when a policy is set) and applies the org's configured policy.
 
 ## The four policies
 

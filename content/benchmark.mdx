@@ -1,6 +1,6 @@
 # Benchmark
 
-AgentMem ships with a reproducible benchmark in a separate repo: [`agentmem-bench`](https://github.com/rooney011/agentmem-bench).
+DinoMem ships with a reproducible benchmark in a separate repo: [`dinomem-bench`](https://github.com/DinoMem/dinomem-bench).
 
 It tests **multi-agent memory** — the cases LoCoMo / LongMemEval / ConvoMem don't cover:
 
@@ -16,11 +16,11 @@ It tests **multi-agent memory** — the cases LoCoMo / LongMemEval / ConvoMem do
 
 ## Comparison set
 
-7 systems run on the same hardware, same scenarios, same scoring: **AgentMem**, **Mem0**, **Zep**, **Cognee**, **Supermemory**, **LangMem**, and a **pgvector** baseline. The pgvector baseline is the floor — if a scenario can be passed by raw vector search alone, it isn't measuring memory-system value.
+7 systems run on the same hardware, same scenarios, same scoring: **DinoMem**, **Mem0**, **Zep**, **Cognee**, **Supermemory**, **LangMem**, and a **pgvector** baseline. The pgvector baseline is the floor — if a scenario can be passed by raw vector search alone, it isn't measuring memory-system value.
 
 ## Reproducibility constraints
 
-- One command: `uv run python -m agentmem_bench --sut all --scenarios all`
+- One command: `uv run python -m dinomem_bench --sut all --scenarios all`
 - Full run under **$30** in API spend (pre-flight estimator aborts if exceeded)
 - All LLMs pinned to specific version strings — no `latest`
 - Fixture data committed; deterministic seeds
@@ -28,7 +28,7 @@ It tests **multi-agent memory** — the cases LoCoMo / LongMemEval / ConvoMem do
 
 ## Status
 
-**Design phase.** The methodology is fully specified in [`DESIGN.md`](https://github.com/rooney011/agentmem-bench/blob/main/DESIGN.md). Harness implementation lands in a follow-up — see the implementation plan §10 in that doc.
+**Design phase.** The methodology is fully specified in [`DESIGN.md`](https://github.com/DinoMem/dinomem-bench/blob/main/DESIGN.md). Harness implementation lands in a follow-up — see the implementation plan §10 in that doc.
 
 ## Why we publish the methodology before the numbers
 

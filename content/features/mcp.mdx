@@ -1,6 +1,6 @@
 # MCP server
 
-`@agentmem/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes AgentMem as tools to any MCP-compatible agent — Claude Desktop, Claude Code, Cursor, Continue, and others.
+`@dinomem/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes DinoMem as tools to any MCP-compatible agent — Claude Desktop, Claude Code, Cursor, Continue, and others.
 
 The agent gets shared memory with one config block. No SDK code to write.
 
@@ -11,16 +11,16 @@ Add to your MCP client config (`claude_desktop_config.json`, `.cursor/mcp.json`,
 ```json copy
 {
   "mcpServers": {
-    "agentmem": {
+    "dinomem": {
       "command": "npx",
-      "args":    ["-y", "@agentmem/mcp"],
-      "env":     { "AGENTMEM_API_KEY": "sk-..." }
+      "args":    ["-y", "@dinomem/mcp"],
+      "env":     { "DINOMEM_API_KEY": "sk-..." }
     }
   }
 }
 ```
 
-Get a key at [agentmem-dashboard.vercel.app](https://agentmem-dashboard.vercel.app). Restart your client.
+Get a key at [dinomem-dashboard.vercel.app](https://dinomem-dashboard.vercel.app). Restart your client.
 
 ## Tools
 
@@ -39,12 +39,12 @@ Each tool's input schema and description is read by the model at tool-selection 
 
 ## Self-hosting
 
-Point `AGENTMEM_BASE_URL` at your own AgentMem deployment:
+Point `DINOMEM_BASE_URL` at your own DinoMem deployment:
 
 ```json
 "env": {
-  "AGENTMEM_API_KEY":  "sk-...",
-  "AGENTMEM_BASE_URL": "https://memory.your-domain.com/v1"
+  "DINOMEM_API_KEY":  "sk-...",
+  "DINOMEM_BASE_URL": "https://memory.your-domain.com/v1"
 }
 ```
 

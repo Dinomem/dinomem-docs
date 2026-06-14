@@ -1,10 +1,10 @@
 # Getting started
 
-This walks you from "never heard of AgentMem" to "memory working in an agent" in about three minutes.
+This walks you from "never heard of DinoMem" to "memory working in an agent" in about three minutes.
 
 ## 1. Sign up and get an API key
 
-1. Open the dashboard: [agentmem-dashboard.vercel.app](https://agentmem-dashboard.vercel.app)
+1. Open the dashboard: [dinomem-dashboard.vercel.app](https://dinomem-dashboard.vercel.app)
 2. Click **"No account? Sign up"** — enter your email, a password, and (optionally) an organization name. An org is created for you automatically.
 3. Confirm the email Supabase sends you (or sign in directly if email confirmation is off for the project).
 4. You'll land on the **API Keys** tab. Click **Create key**, give it a name, copy the `sk-...` shown once — the dashboard won't show it again.
@@ -16,7 +16,7 @@ Keys are scoped to your org. To bring in a teammate, go to the **Members** tab �
 The fastest path is the init CLI — it detects your project, installs the SDK, drops an env placeholder, and writes a demo script:
 
 ```bash copy
-npx @agentmem/cli init
+npx @dinomem/cli init
 ```
 
 Or install the SDK manually:
@@ -26,14 +26,14 @@ import { Tabs } from 'nextra/components'
 <Tabs items={['TypeScript', 'Python']}>
 <Tabs.Tab>
 ```bash copy
-npm install @agentmem/sdk
+npm install @dinomem/sdk
 # or
-pnpm add @agentmem/sdk
+pnpm add @dinomem/sdk
 ```
 </Tabs.Tab>
 <Tabs.Tab>
 ```bash copy
-pip install agentmem-py
+pip install dinomem-py
 ```
 </Tabs.Tab>
 </Tabs>
@@ -43,9 +43,9 @@ pip install agentmem-py
 <Tabs items={['TypeScript', 'Python']}>
 <Tabs.Tab>
 ```ts copy
-import { MemoryStore } from '@agentmem/sdk'
+import { MemoryStore } from '@dinomem/sdk'
 
-const mem = new MemoryStore({ apiKey: process.env.AGENTMEM_API_KEY! })
+const mem = new MemoryStore({ apiKey: process.env.DINOMEM_API_KEY! })
 
 const { writeId } = await mem.write({
   content: 'Customer prefers email over phone. Escalation threshold is $500.',
@@ -61,9 +61,9 @@ console.log({ writeId })
 <Tabs.Tab>
 ```python copy
 import os
-from agentmem_py import MemoryStore
+from dinomem_py import MemoryStore
 
-mem = MemoryStore(api_key=os.environ["AGENTMEM_API_KEY"])
+mem = MemoryStore(api_key=os.environ["DINOMEM_API_KEY"])
 
 result = mem.write(
     content="Customer prefers email over phone. Escalation threshold is $500.",
@@ -108,9 +108,9 @@ for hit in hits:
 </Tabs.Tab>
 </Tabs>
 
-Under the hood, AgentMem runs three retrieval strategies in parallel — semantic similarity (pgvector), keyword (BM25), and entity-graph traversal — and merges them with Reciprocal Rank Fusion. The returned `score` is the fused score.
+Under the hood, DinoMem runs three retrieval strategies in parallel — semantic similarity (pgvector), keyword (BM25), and entity-graph traversal — and merges them with Reciprocal Rank Fusion. The returned `score` is the fused score.
 
-For higher precision (at the cost of ~500–1500ms of latency), pass `rerank: true` and AgentMem will re-score the top candidates with Gemini. See [Re-ranking](/features/reranking).
+For higher precision (at the cost of ~500–1500ms of latency), pass `rerank: true` and DinoMem will re-score the top candidates with Gemini. See [Re-ranking](/features/reranking).
 
 ## 5. What to read next
 
@@ -125,12 +125,12 @@ Every SDK call is a thin wrapper over the REST API. The above two calls in `curl
 
 ```bash copy
 curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/memory/write \
-  -H "Authorization: Bearer $AGENTMEM_API_KEY" \
+  -H "Authorization: Bearer $DINOMEM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"content":"Customer prefers email","agentId":"support-bot","scope":"team"}'
 
 curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/memory/search \
-  -H "Authorization: Bearer $AGENTMEM_API_KEY" \
+  -H "Authorization: Bearer $DINOMEM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"customer escalations","agentId":"support-bot","topK":5}'
 ```

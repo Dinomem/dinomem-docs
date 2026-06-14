@@ -5,28 +5,28 @@ import 'nextra-theme-docs/style.css'
 
 export const metadata = {
   title: {
-    default:  'AgentMem — Memory API for AI agents',
-    template: '%s | AgentMem',
+    default:  'DinoMem — Memory API for AI agents',
+    template: '%s | DinoMem',
   },
   description: 'Postgres-native memory layer for AI agents. TypeScript and Python SDKs. CRDT conflict resolution, hybrid retrieval, webhooks, BYOK.',
 }
 
 const banner = (
-  <Banner storageKey="agentmem-docs-banner">
-    AgentMem is in active development. <a href="https://github.com/rooney011/agentmem-sdk">Star us on GitHub</a>.
+  <Banner storageKey="dinomem-docs-banner">
+    DinoMem is in active development. <a href="https://github.com/DinoMem/dinomem-sdk">Star us on GitHub</a>.
   </Banner>
 )
 
 const navbar = (
   <Navbar
-    logo={<b>AgentMem</b>}
-    projectLink="https://github.com/rooney011/agentmem-sdk"
+    logo={<b>DinoMem</b>}
+    projectLink="https://github.com/DinoMem/dinomem-sdk"
   />
 )
 
 const footer = (
   <Footer>
-    Apache 2.0 {new Date().getFullYear()} © AgentMem
+    Apache 2.0 {new Date().getFullYear()} © DinoMem
   </Footer>
 )
 
@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           banner={banner}
           navbar={navbar}
           footer={footer}
-          docsRepositoryBase="https://github.com/rooney011/agentmem-docs/blob/main"
+          docsRepositoryBase="https://github.com/DinoMem/dinomem-docs/blob/main"
           pageMap={await getPageMap()}
         >
           {children}

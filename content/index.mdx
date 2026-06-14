@@ -1,11 +1,11 @@
-# AgentMem
+# DinoMem
 
 **The memory layer for AI agents.** Postgres-native, TypeScript- and Python-first, framework-agnostic. Drop it into any agent stack (LangChain, LangGraph, CrewAI, Mastra, Claude SDK, custom) in three lines.
 
 ```ts copy
-import { MemoryStore } from '@agentmem/sdk'
+import { MemoryStore } from '@dinomem/sdk'
 
-const mem = new MemoryStore({ apiKey: process.env.AGENTMEM_API_KEY! })
+const mem = new MemoryStore({ apiKey: process.env.DINOMEM_API_KEY! })
 
 await mem.write({ content: 'Alice prefers email over phone', agentId: 'support-bot' })
 const hits = await mem.search({ query: 'how should I reach Alice?', agentId: 'support-bot' })
@@ -24,10 +24,10 @@ const hits = await mem.search({ query: 'how should I reach Alice?', agentId: 'su
 
 ```bash copy
 # TypeScript
-npm install @agentmem/sdk
+npm install @dinomem/sdk
 
 # Python
-pip install agentmem-py
+pip install dinomem-py
 ```
 
 ## Where to next

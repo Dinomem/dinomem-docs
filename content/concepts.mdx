@@ -4,7 +4,7 @@ Read this once and the rest of the docs will make sense.
 
 ## The unit: a memory
 
-A memory is a string of text plus metadata. AgentMem doesn't impose a schema on the content — store what's useful to your agent.
+A memory is a string of text plus metadata. DinoMem doesn't impose a schema on the content — store what's useful to your agent.
 
 ```json
 {
@@ -64,7 +64,7 @@ This is used internally by conflict detection to distinguish "concurrent write b
 
 ## Conflicts and resolution
 
-When you write a memory that contradicts an existing one (e.g. agent A wrote "deadline is Friday" and you're writing "deadline is Monday"), AgentMem can:
+When you write a memory that contradicts an existing one (e.g. agent A wrote "deadline is Friday" and you're writing "deadline is Monday"), DinoMem can:
 
 - **Detect the conflict** via a Gemini-based contradiction check before storing
 - **Apply a policy** — block the write, supersede the old memory, or fire a webhook for human review

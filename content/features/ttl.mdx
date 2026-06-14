@@ -42,7 +42,7 @@ One event fires per expired memory.
 
 ## Operator setup: enable the sweep
 
-If you're self-hosting (or running your own Supabase project for AgentMem) and want the sweep, run this once in the SQL editor:
+If you're self-hosting (or running your own Supabase project for DinoMem) and want the sweep, run this once in the SQL editor:
 
 ```sql copy
 alter database postgres set app.api_base_url = 'https://<your-project>.supabase.co/functions/v1';
@@ -52,7 +52,7 @@ create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 select cron.schedule(
-  'agentmem-expire-memories',
+  'dinomem-expire-memories',
   '*/5 * * * *',
   $cron$
   select net.http_post(

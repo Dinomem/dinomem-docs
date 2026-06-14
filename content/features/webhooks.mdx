@@ -17,7 +17,7 @@ Subscribe to events fired by the API. Useful for keeping your own systems in syn
 
 ```ts copy
 const { secret, ...sub } = await mem.createWebhook({
-  url:    'https://your-backend.example.com/agentmem/hook',
+  url:    'https://your-backend.example.com/dinomem/hook',
   events: ['memory.written', 'memory.expired', 'memory.conflict_detected'],
 })
 
@@ -70,7 +70,7 @@ The `payload` differs per event. Examples:
 
 ## Verifying signatures
 
-Every delivery is HMAC-SHA256 signed using the secret you saved at subscription time. The signature is in the `X-AgentMem-Signature` header as `sha256=<hex>`.
+Every delivery is HMAC-SHA256 signed using the secret you saved at subscription time. The signature is in the `X-DinoMem-Signature` header as `sha256=<hex>`.
 
 Sample Node.js verification:
 
@@ -94,10 +94,10 @@ function verify(rawBody: string, signatureHeader: string, secret: string): boole
 
 ## Delivery semantics
 
-- **Fire-and-forget.** AgentMem POSTs your URL once, in parallel for all matching subscribers.
+- **Fire-and-forget.** DinoMem POSTs your URL once, in parallel for all matching subscribers.
 - **No retries** in v1. If your endpoint is down, the event is dropped.
 - **No ordering guarantee** across events.
-- **5-second timeout** per delivery before AgentMem moves on.
+- **5-second timeout** per delivery before DinoMem moves on.
 
 Build your handlers to be idempotent (use the `writeId` / `memoryId` as a dedup key if you re-process), and don't rely on receiving every event for correctness.
 

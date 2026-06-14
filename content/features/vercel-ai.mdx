@@ -1,9 +1,9 @@
 # Vercel AI SDK integration
 
-`@agentmem/vercel-ai-provider` plugs AgentMem into [Vercel's AI SDK](https://ai-sdk.dev). Three patterns — pick one or stack them.
+`@dinomem/vercel-ai-provider` plugs DinoMem into [Vercel's AI SDK](https://ai-sdk.dev). Three patterns — pick one or stack them.
 
 ```bash copy
-npm install @agentmem/vercel-ai-provider ai
+npm install @dinomem/vercel-ai-provider ai
 ```
 
 `ai` and `zod` are peer deps; if you already use the AI SDK you have them.
@@ -15,19 +15,19 @@ Wrap any `@ai-sdk/*` model. Memories auto-inject on every call.
 ```ts copy
 import { generateText, wrapLanguageModel } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
-import { createAgentMemMiddleware } from '@agentmem/vercel-ai-provider'
+import { createDinoMemMiddleware } from '@dinomem/vercel-ai-provider'
 
-const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'support-bot' }
+const cfg = { apiKey: process.env.DINOMEM_API_KEY!, agentId: 'support-bot' }
 
 const model = wrapLanguageModel({
   model:      anthropic('claude-opus-4-7'),
-  middleware: createAgentMemMiddleware(cfg),
+  middleware: createDinoMemMiddleware(cfg),
 })
 
 const { text } = await generateText({ model, prompt: 'How do we handle escalations?' })
 ```
 
-If memory search fails (network, auth), the middleware logs to stderr and lets the call proceed without injection — the model never blocks on AgentMem.
+If memory search fails (network, auth), the middleware logs to stderr and lets the call proceed without injection — the model never blocks on DinoMem.
 
 ## Pattern B — tools
 
@@ -36,13 +36,13 @@ Let the agent decide when to call `memorize` / `recall`.
 ```ts copy
 import { generateText } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
-import { agentmemMemorize, agentmemRecall } from '@agentmem/vercel-ai-provider'
+import { dinomemMemorize, dinomemRecall } from '@dinomem/vercel-ai-provider'
 
 await generateText({
   model:  anthropic('claude-opus-4-7'),
   tools:  {
-    memorize: agentmemMemorize(cfg),
-    recall:   agentmemRecall(cfg),
+    memorize: dinomemMemorize(cfg),
+    recall:   dinomemRecall(cfg),
   },
   prompt: '...',
 })
@@ -55,7 +55,7 @@ import {
   addMemories,
   retrieveMemories,
   searchMemories,
-} from '@agentmem/vercel-ai-provider'
+} from '@dinomem/vercel-ai-provider'
 
 await addMemories('User prefers email.', cfg)
 
@@ -71,10 +71,10 @@ These are name-compatible with `@mem0/vercel-ai-provider` — switching is a one
 
 ```diff
 - import { addMemories, retrieveMemories } from '@mem0/vercel-ai-provider'
-+ import { addMemories, retrieveMemories } from '@agentmem/vercel-ai-provider'
++ import { addMemories, retrieveMemories } from '@dinomem/vercel-ai-provider'
 
 - const cfg = { mem0ApiKey: process.env.MEM0_API_KEY, user_id: 'u1' }
-+ const cfg = { apiKey: process.env.AGENTMEM_API_KEY!, agentId: 'u1' }
++ const cfg = { apiKey: process.env.DINOMEM_API_KEY!, agentId: 'u1' }
 ```
 
 We don't wrap every model SDK — we apply at the AI SDK level so any `@ai-sdk/*` provider works.

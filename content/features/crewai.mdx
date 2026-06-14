@@ -1,18 +1,18 @@
 # CrewAI integration
 
-`agentmem-crewai` is the Python integration for [CrewAI](https://crewai.com). It ships two pre-built tools that match the shape of CrewAI's built-in `RecallMemoryTool` / `RememberTool` — agents get hybrid retrieval and Postgres-native storage with one config object, no changes to the rest of your Crew code.
+`dinomem-crewai` is the Python integration for [CrewAI](https://crewai.com). It ships two pre-built tools that match the shape of CrewAI's built-in `RecallMemoryTool` / `RememberTool` — agents get hybrid retrieval and Postgres-native storage with one config object, no changes to the rest of your Crew code.
 
 ```bash copy
-pip install agentmem-crewai
+pip install dinomem-crewai
 ```
 
 ## Quick start
 
 ```python copy
 from crewai import Agent, Crew, Task
-from agentmem_crewai import AgentMemConfig, create_agentmem_tools
+from dinomem_crewai import DinoMemConfig, create_dinomem_tools
 
-config = AgentMemConfig(
+config = DinoMemConfig(
     api_key="sk-...",
     agent_id="support-bot",
     scope="team",        # optional default
@@ -22,7 +22,7 @@ support = Agent(
     role="Support specialist",
     goal="Help customers and remember what they prefer.",
     backstory="...",
-    tools=create_agentmem_tools(config),
+    tools=create_dinomem_tools(config),
 )
 
 crew = Crew(agents=[support], tasks=[Task(...)])
@@ -35,8 +35,8 @@ The agent gets two tools: **Search memory** (recall) and **Save to memory** (rem
 
 | Tool | Purpose | Input |
 |---|---|---|
-| `AgentMemRecallTool` | Hybrid search (semantic + keyword + graph). | `queries: list[str]` |
-| `AgentMemRememberTool` | Persist one or more facts. | `contents: list[str]` |
+| `DinoMemRecallTool` | Hybrid search (semantic + keyword + graph). | `queries: list[str]` |
+| `DinoMemRememberTool` | Persist one or more facts. | `contents: list[str]` |
 
 Both shapes are identical to CrewAI's built-ins (same `name`, `args_schema`, schema fields). The model doesn't need re-prompting — it'll use these tools without any tuning.
 
@@ -45,7 +45,7 @@ Both shapes are identical to CrewAI's built-ins (same `name`, `args_schema`, sch
 For pre-task setup, post-task extraction, or any flow outside the agent loop:
 
 ```python copy
-from agentmem_crewai import add_memory, recall_memories, search_memories
+from dinomem_crewai import add_memory, recall_memories, search_memories
 
 # Pre-task: inject memories into a task description
 context = recall_memories("what does this customer prefer?", config)
@@ -74,4 +74,4 @@ add_memory("Customer asked about Q4 pricing.", config)
 
 ## What this replaces
 
-CrewAI's built-in memory uses LanceDB locally (or Mem0 if you configure that provider). This package gives you AgentMem's Postgres-native memory through the same tool interface — no `Memory` class rewrite, no separate storage stack, no per-agent LanceDB files.
+CrewAI's built-in memory uses LanceDB locally (or Mem0 if you configure that provider). This package gives you DinoMem's Postgres-native memory through the same tool interface — no `Memory` class rewrite, no separate storage stack, no per-agent LanceDB files.

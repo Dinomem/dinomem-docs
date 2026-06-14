@@ -1,11 +1,11 @@
 # Mastra integration
 
-`@agentmem/mastra` is a drop-in memory layer for [Mastra](https://mastra.ai) agents. It ships an `Integration` subclass and two pre-built tools — `memorize` and `remember` — that an agent can call without you having to wrap anything.
+`@dinomem/mastra` is a drop-in memory layer for [Mastra](https://mastra.ai) agents. It ships an `Integration` subclass and two pre-built tools — `memorize` and `remember` — that an agent can call without you having to wrap anything.
 
 ## Install
 
 ```bash copy
-npm install @agentmem/mastra @mastra/core zod
+npm install @dinomem/mastra @mastra/core zod
 ```
 
 `@mastra/core` and `zod` are peer dependencies (Mastra projects already have them).
@@ -15,13 +15,13 @@ npm install @agentmem/mastra @mastra/core zod
 ```ts copy
 import { Agent } from '@mastra/core/agent'
 import {
-  AgentMemIntegration,
-  agentmemMemorize,
-  agentmemRemember,
-} from '@agentmem/mastra'
+  DinoMemIntegration,
+  dinomemMemorize,
+  dinomemRemember,
+} from '@dinomem/mastra'
 
-const agentmem = new AgentMemIntegration({
-  apiKey:  process.env.AGENTMEM_API_KEY!,
+const dinomem = new DinoMemIntegration({
+  apiKey:  process.env.DINOMEM_API_KEY!,
   agentId: 'support-bot',          // default for every memory operation
   scope:   'team',                 // optional default
 })
@@ -33,8 +33,8 @@ const agent = new Agent({
     'constraint), call `memorize`. Before answering, call `remember` to recall ' +
     'prior context.',
   tools: {
-    memorize: agentmemMemorize(agentmem),
-    remember: agentmemRemember(agentmem),
+    memorize: dinomemMemorize(dinomem),
+    remember: dinomemRemember(dinomem),
   },
 })
 ```
@@ -72,9 +72,9 @@ Returns a **prompt-prefixed string** the agent can splice directly into its reas
 The integration class also exposes direct methods for custom flows:
 
 ```ts copy
-const text = await agentmem.searchMemory('escalation policy?', { agentId: 'bot' })
-const hits = await agentmem.searchMemoryRaw('escalation policy?', { agentId: 'bot' })
-await agentmem.createMemory('Customer prefers email.', { agentId: 'bot' })
+const text = await dinomem.searchMemory('escalation policy?', { agentId: 'bot' })
+const hits = await dinomem.searchMemoryRaw('escalation policy?', { agentId: 'bot' })
+await dinomem.createMemory('Customer prefers email.', { agentId: 'bot' })
 ```
 
 ## Defaults and overrides
