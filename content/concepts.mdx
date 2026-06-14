@@ -62,6 +62,8 @@ Every write ticks a per-agent, per-scope counter. The resulting clock is stored 
 
 This is used internally by conflict detection to distinguish "concurrent write by an agent that didn't know about memory X" from "deliberate update that supersedes memory X". You usually don't read these directly; they're exposed on hits so observability tools can surface causality. See [History](/features/history) for the supersession lineage.
 
+The vector-clock *ticking* and the supersession lineage ship today; the broader CRDT-based convergence story (clock merge plus a proof that concurrent replicas reconcile to the same state) is a V3 roadmap item and is not yet shipped or benchmarked. Today's conflict resolution is the [policy layer](/features/conflict-policies) below, not an automatic convergence guarantee.
+
 ## Conflicts and resolution
 
 When you write a memory that contradicts an existing one (e.g. agent A wrote "deadline is Friday" and you're writing "deadline is Monday"), DinoMem can:

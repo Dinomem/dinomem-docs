@@ -1,6 +1,8 @@
 # DinoMem
 
-**The memory layer for AI agents.** Postgres-native, TypeScript- and Python-first, framework-agnostic. Drop it into any agent stack (LangChain, LangGraph, CrewAI, Mastra, Claude SDK, custom) in three lines.
+DinoMem is the Postgres-native memory layer for multi-agent systems — it runs entirely inside your Supabase/Postgres (no separate Redis, Neo4j, or Pinecone) and gives concurrent agents typed, auditable conflict resolution.
+
+TypeScript- and Python-first, framework-agnostic. Drop it into any agent stack (LangChain, LangGraph, CrewAI, Mastra, Claude SDK, custom) in three lines.
 
 ```ts copy
 import { MemoryStore } from '@dinomem/sdk'
@@ -15,10 +17,22 @@ const hits = await mem.search({ query: 'how should I reach Alice?', agentId: 'su
 
 - **Write + search** with embeddings, BM25 keyword search, and entity-graph traversal — all merged with Reciprocal Rank Fusion. Optional [Gemini re-ranking](/features/reranking) for high-precision queries.
 - **Multi-agent coordination.** [Scopes](/concepts) (private / team / global) + roles (planner / executor / observer) + [access grants](/features/access-grants) give you fine-grained visibility control out of the box.
-- **CRDT conflict resolution.** Vector clocks per agent, [configurable policies](/features/conflict-policies) (`planner_wins`, `timestamp_wins`, `human_in_loop`), and [supersession lineage](/features/history) so you can audit who replaced what.
+- **Typed conflict resolution.** [Configurable policies](/features/conflict-policies) (`planner_wins`, `timestamp_wins`, `human_in_loop`) and [supersession lineage](/features/history) so you can audit who replaced what. Per-agent vector clocks tick on every write to track causality; full CRDT-based convergence is on our V3 roadmap (not yet benchmarked).
 - **TTL + retention.** [Memories expire](/features/ttl) automatically. [Retention policies](/features/retention) prune old data on a schedule.
 - **Webhooks.** Subscribe to `memory.written`, `memory.expired`, `memory.conflict_detected`, etc. — HMAC-signed payloads.
 - **BYOK encryption** for compliance-sensitive deployments.
+
+## Non-goals
+
+Non-goals (state explicitly; we are NOT building toward these):
+
+- NOT Mem0-scale at 100M+ vectors per tenant.
+- NOT a many-storage-backend abstraction (Postgres-only is the point).
+- NOT best-in-class entity/relation extraction quality.
+- NOT a general document-RAG ingestion pipeline.
+- NOT procedural skill learning.
+
+The defensible quadrant is single-substrate (Postgres-only) x formal-CRDT conflict handling — and the CRDT half is a V3 roadmap item, not a shipped/measured guarantee yet.
 
 ## Install
 
