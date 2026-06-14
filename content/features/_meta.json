@@ -5,6 +5,7 @@
   "vercel-ai":         "Vercel AI SDK",
   "crewai":            "CrewAI",
   "conflict-policies": "Conflict policies",
+  "crdt":              "CRDT convergence",
   "ttl":               "TTL & expiry",
   "reranking":         "Re-ranking",
   "access-grants":     "Access grants",

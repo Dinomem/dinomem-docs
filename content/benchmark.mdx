@@ -9,12 +9,12 @@ It tests **multi-agent memory** — the cases LoCoMo / LongMemEval / ConvoMem do
 | **S1** Contradictory writes | Two agents disagree; does the system surface or resolve? |
 | **S2** Temporal validity | `at_time` queries — what did we believe at T? |
 | **S3** Scope enforcement | Private memory must not leak across agents |
-| **S4** CRDT convergence | Concurrent writes converge to the same state (a V3 roadmap probe — see note below) |
+| **S4** CRDT convergence | Concurrent writes converge to the same state — drivable only against a replica/sync API (see note below) |
 | **S5** Cross-workflow isolation | Workflow A search must not return workflow B content |
 | **S6** Policy fidelity | `planner_wins` / `timestamp_wins` / HITL produce documented outcomes |
 | **S7** Operational | Latency p50/p95 + cost per 1K ops |
 
-> **On S4 (CRDT convergence):** this probe is currently **N/A / unverified for every system in the set, including DinoMem.** Convergence under concurrent writes is not yet measurable in any shipping product here — DinoMem ticks vector clocks today, but CRDT-based convergence is a V3 roadmap item, not a shipped or benchmarked guarantee. Only a reference implementation is expected to pass S4 once the harness lands; treat S4 as a forward-looking probe, not a settled differentiator.
+> **On S4 (CRDT convergence):** S4 can only be *driven* against a system that exposes a replica/sync API — without one, there is no way to apply concurrent writes to independent replicas and observe whether they reconcile. DinoMem is the only system in the set that exposes such an API (`POST /v1/crdt/replicas/{id}/write`, `.../sync`, `GET .../state`), backed by an op-based LWW-Register CvRDT engine whose convergence is **property-tested and empirically order-independent** (order-independence across shuffles, the CvRDT laws, no-lost-writes vs. an independent brute-force reference, partial out-of-order sync, and a CRDT-vs-naive-LWW ablation). Every other system here is structurally **N/A** on S4 — they have no drivable replica/sync surface to test. For DinoMem the engine is **property-tested + adapter-ready, with the live cross-system run pending**: the S4 scorecard cell flips to a measured result only after a live run against a deployed instance, so this is not yet a claimed head-to-head benchmark win.
 
 ## Comparison set
 

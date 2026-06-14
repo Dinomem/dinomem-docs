@@ -1,0 +1,70 @@
+# CRDT convergence & the replica/sync API
+
+DinoMem ships a conflict-free replicated data type (CRDT) engine so that concurrent writes from independent replicas converge to the same state — regardless of the order, batching, or duplication in which operations arrive.
+
+This is distinct from the [conflict policies](/features/conflict-policies). Policies decide *which* value wins for a given key at write time (and can block or escalate a contradictory write). The CRDT layer is the deterministic merge underneath: given the same *set* of operations, every replica reaches the same merged state with no coordination.
+
+## The engine
+
+DinoMem's convergence engine is an **op-based LWW-Register CvRDT**:
+
+- Each write is an **operation** carrying a key, a value, and a causal timestamp/clock.
+- Replicas merge operations **pairwise**. Merge is commutative, associative, and idempotent, so replaying or re-ordering operations never changes the outcome.
+- Per key, a **last-writer-wins register** picks the surviving value using the causal clock (with a deterministic tie-break), so two replicas that have seen the same operations always agree on every key.
+
+Because the merge obeys the CvRDT laws, the order in which replicas exchange and apply operations does not matter — partial, out-of-order, and repeated syncs all converge to the same final state.
+
+## How convergence is verified
+
+Convergence is **property-tested and empirically order-independent** — verified by an automated property-test suite rather than asserted. The suite checks:
+
+- **Order-independence across shuffles** — the same operation set, applied in many randomized orders, yields one identical final state.
+- **The CvRDT laws** — commutativity, associativity, and idempotence of the merge.
+- **No lost writes** — results are cross-checked against an independent brute-force reference implementation; no operation is silently dropped.
+- **Partial, out-of-order sync** — replicas that exchange only some operations, in arbitrary order, still converge once they have seen the same set.
+- **CRDT-vs-naive-LWW ablation** — demonstrates cases where a naive "newest wall-clock wins" loses writes that the CvRDT engine preserves.
+
+This is a property-test suite, **not** a machine-checked formal proof. The claim is empirical order-independence under the tested properties, not a mathematical guarantee.
+
+## The replica/sync API
+
+The engine is drivable end-to-end as a black box. You create independent replicas, write to them in any order, sync them, and read back state.
+
+### `POST /v1/crdt/replicas/{id}/write`
+
+Apply a write operation to replica `{id}`.
+
+```bash copy
+curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/crdt/replicas/replica-a/write \
+  -H "Authorization: Bearer $DINOMEM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "key": "deadline", "value": "Friday" }'
+```
+
+### `POST /v1/crdt/replicas/{id}/sync`
+
+Exchange and merge operations between replica `{id}` and one or more peers. Safe to call repeatedly and in any order — merges are idempotent.
+
+```bash copy
+curl -X POST https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/crdt/replicas/replica-a/sync \
+  -H "Authorization: Bearer $DINOMEM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "peers": ["replica-b"] }'
+```
+
+### `GET /v1/crdt/replicas/{id}/state`
+
+Read the current converged state of replica `{id}`.
+
+```bash copy
+curl -X GET https://lwbwcuuzoituanwhekyo.supabase.co/functions/v1/api/v1/crdt/replicas/replica-a/state \
+  -H "Authorization: Bearer $DINOMEM_API_KEY"
+```
+
+After two replicas have synced over the same operation set, their `state` responses are identical.
+
+## Why this is the only system that can be benchmarked on convergence
+
+Convergence under concurrent writes can only be *driven* and *observed* against a system that exposes a replica/sync surface — somewhere to apply concurrent operations to independent replicas and then compare their resulting state. DinoMem is the only system in the [benchmark](/benchmark) set that exposes such an API, so it is the only one whose CRDT convergence can be exercised on scenario **S4** at all; every other system is structurally **N/A** there.
+
+The engine is property-tested and adapter-ready; the cross-system **S4** scorecard cell becomes a measured result only after a live run against a deployed instance, which is pending. See the [benchmark page](/benchmark) for the full S4 note.

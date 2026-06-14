@@ -1,6 +1,6 @@
 # DinoMem
 
-DinoMem is the Postgres-native memory layer for multi-agent systems — it runs entirely inside your Supabase/Postgres (no separate Redis, Neo4j, or Pinecone) and gives concurrent agents typed, auditable conflict resolution.
+DinoMem is the Postgres-native memory layer for multi-agent systems — it runs entirely inside your Supabase/Postgres (no separate Redis, Neo4j, or Pinecone) and gives concurrent agents typed, auditable conflict resolution with property-tested CRDT convergence under concurrent writes.
 
 TypeScript- and Python-first, framework-agnostic. Drop it into any agent stack (LangChain, LangGraph, CrewAI, Mastra, Claude SDK, custom) in three lines.
 
@@ -17,7 +17,7 @@ const hits = await mem.search({ query: 'how should I reach Alice?', agentId: 'su
 
 - **Write + search** with embeddings, BM25 keyword search, and entity-graph traversal — all merged with Reciprocal Rank Fusion. Optional [Gemini re-ranking](/features/reranking) for high-precision queries.
 - **Multi-agent coordination.** [Scopes](/concepts) (private / team / global) + roles (planner / executor / observer) + [access grants](/features/access-grants) give you fine-grained visibility control out of the box.
-- **Typed conflict resolution.** [Configurable policies](/features/conflict-policies) (`planner_wins`, `timestamp_wins`, `human_in_loop`) and [supersession lineage](/features/history) so you can audit who replaced what. Per-agent vector clocks tick on every write to track causality; full CRDT-based convergence is on our V3 roadmap (not yet benchmarked).
+- **Typed conflict resolution.** [Configurable policies](/features/conflict-policies) (`planner_wins`, `timestamp_wins`, `human_in_loop`) and [supersession lineage](/features/history) so you can audit who replaced what. Per-agent vector clocks tick on every write to track causality, and an op-based LWW-Register CvRDT engine ships today — concurrent replicas converge to the same state regardless of message order, with [convergence verified by a property-test suite](/features/crdt) and a drivable replica/sync API.
 - **TTL + retention.** [Memories expire](/features/ttl) automatically. [Retention policies](/features/retention) prune old data on a schedule.
 - **Webhooks.** Subscribe to `memory.written`, `memory.expired`, `memory.conflict_detected`, etc. — HMAC-signed payloads.
 - **BYOK encryption** for compliance-sensitive deployments.
@@ -32,7 +32,7 @@ Non-goals (state explicitly; we are NOT building toward these):
 - NOT a general document-RAG ingestion pipeline.
 - NOT procedural skill learning.
 
-The defensible quadrant is single-substrate (Postgres-only) x formal-CRDT conflict handling — and the CRDT half is a V3 roadmap item, not a shipped/measured guarantee yet.
+The defensible quadrant is single-substrate (Postgres-only) x CRDT conflict handling — and both halves ship today: a property-tested, empirically order-independent CvRDT convergence engine plus the [replica/sync API](/features/crdt) that drives it.
 
 ## Install
 
